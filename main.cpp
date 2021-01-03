@@ -1,17 +1,23 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <Windows.h>
 #include "Solver.h"
-
-//#define CONSOLE
 
 using namespace std;
 
-vector<string> tokenize(const string& originalString, char delimiter);
+vector<string> tokenize(const string &originalString, char delimiter);
 
 int main(int argc, char *argv[]) {
-    ifstream in("data.txt");
+    if (argc < 3) {
+        cout << "Usage: " << argv[0] << " <file> <millisecond>" << endl;
+        return EXIT_FAILURE;
+    }
+    ifstream in(argv[1]);
+
     string fileString;
+
+    float interval = stof(argv[2]);
 
     int width, height;
 
@@ -33,12 +39,12 @@ int main(int argc, char *argv[]) {
         height = stoi(tokenizedString[1]);
 
         if (tokenizedString.size() < width + height + 2) {
-            cout << "파일이 형식에 맞지 않음." << endl;
+            cout << "Invalid file format" << endl;
             return -1;
         }
     } else {
-        cout << "\"data.txt\" 파일을 찾을 수 없습니다." << endl;
-        return -1;
+        cout << "Can't read " << argv[1] << endl;
+        return EXIT_FAILURE;
     }
 
     vector<vector<int>> verticalBlockLengths;
@@ -56,82 +62,71 @@ int main(int argc, char *argv[]) {
         verticalBlockLengths.push_back(verticalBlockLength);
     }
 
-    vector<vector<int>> horizentalBlockLengths;
-    horizentalBlockLengths.reserve(width);
+    vector<vector<int>> horizontalBlockLengths;
+    horizontalBlockLengths.reserve(width);
     for (int i = 0; i < width; i++) {
         vector<string> tokenizedLengths = tokenize(tokenizedString[i + 2 + width], ' ');
 
-        vector<int> horizentalBlockLength;
-        horizentalBlockLength.reserve(tokenizedLengths.size());
+        vector<int> horizontalBlockLength;
+        horizontalBlockLength.reserve(tokenizedLengths.size());
 
         for (const string &tokenizedLength : tokenizedLengths) {
-            horizentalBlockLength.push_back(stoi(tokenizedLength));
+            horizontalBlockLength.push_back(stoi(tokenizedLength));
         }
 
-        horizentalBlockLengths.push_back(horizentalBlockLength);
+        horizontalBlockLengths.push_back(horizontalBlockLength);
     }
 
-    solver s(width, height, verticalBlockLengths, horizentalBlockLengths);
+    Solver s(width, height, verticalBlockLengths, horizontalBlockLengths);
 
-    auto *preMap = new solver(s);
+    Solver preMap1(s);
+    Solver preMap2(s);
+
+    system("cls");
+    s.print();
 
     while (!s.isMapClear()) {
         for (int i = 0; i < height; i++) {
             s.solveOneVerticalLine(i);
 
-#ifdef CONSOLE
-            //system("cls");
+            if (s != preMap1) {
+                Sleep(interval);
+                system("cls");
+                s.print();
+            }
+            preMap1.copyFrom(s);
 
-            cout << endl << "=================================" << endl;
-            s.print();
-            cout << endl << "=================================" << endl;
-
-            //system("pause>nul");
-#endif // CONSOLE
+            if (s.isMapClear())break;
         }
 
         for (int i = 0; i < width; i++) {
-            s.solveOneHorizentalLine(i);
+            s.solveOneHorizontalLine(i);
 
-#ifdef CONSOLE
-            //system("cls");
+            if (s != preMap1) {
+                Sleep(interval);
+                system("cls");
+                s.print();
+            }
+            preMap1.copyFrom(s);
 
-            cout << endl << "=================================" << endl;
-            s.print();
-            cout << endl << "=================================" << endl;
-
-            //system("pause>nul");
-#endif // CONSOLE
+            if (s.isMapClear())break;
         }
 
-#ifdef CONSOLE
-        //s.print();
-        //cout << "============================" << endl;
-        //preMap->print();
-
-        //system("pause>nul");
-        //system("cls");
-#endif // CONSOLE
-
-#ifndef CONSOLE
-        if (*preMap == s) {
-            cout << "Cannot Solve." << endl;
+        if (preMap2 == s) {
+            cout << "Can't Solve." << endl;
             break;
         }
-#endif // !CONSOLE
 
-        delete preMap;
-        preMap = new solver(s);
+        preMap2.copyFrom(s);
     }
 
-    delete preMap;
-
+    system("cls");
     s.print();
 
     return 0;
 }
 
-vector<string> tokenize(const string& originalString, const char delimiter) {
+vector<string> tokenize(const string &originalString, const char delimiter) {
     vector<string> result;
 
     string token;

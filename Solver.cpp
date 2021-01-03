@@ -4,13 +4,13 @@
 //#define CONSOLE
 
 
-solver::solver(int width,
+Solver::Solver(int width,
                int height,
                vector<vector<int>> verticalBlockLengths,
-               vector<vector<int>> horizentalBlockLengths) :
+               vector<vector<int>> horizontalBlockLengths) :
         mWidth(width),
         mHeight(height),
-        mHorizentalBlockLengths(std::move(horizentalBlockLengths)),
+        mHorizontalBlockLengths(std::move(horizontalBlockLengths)),
         mVerticalBlockLengths(std::move(verticalBlockLengths)),
         mMap(new cell[width * height]) {
     for (int i = 0; i < mWidth * mHeight; i++) {
@@ -18,9 +18,9 @@ solver::solver(int width,
     }
 }
 
-solver::solver(const solver &original) :
+Solver::Solver(const Solver &original) :
         mWidth(original.mWidth), mHeight(original.mHeight),
-        mHorizentalBlockLengths(original.mHorizentalBlockLengths),
+        mHorizontalBlockLengths(original.mHorizontalBlockLengths),
         mVerticalBlockLengths(original.mVerticalBlockLengths) {
     mMap = new cell[mWidth * mHeight];
 
@@ -29,7 +29,7 @@ solver::solver(const solver &original) :
     }
 }
 
-vector<solver::cell> solver::solveLine(vector<cell> line, vector<int> blockLengths) {
+vector<Solver::cell> Solver::solveLine(vector<cell> line, vector<int> blockLengths) {
     //모든 조합을 가져온다
     vector<vector<cell>> everyCombinations = getEveryCellCombination(std::move(blockLengths), line.size());
 
@@ -57,7 +57,7 @@ vector<solver::cell> solver::solveLine(vector<cell> line, vector<int> blockLengt
         bool isThereCrash = false;
 
         //각 원소 비교
-        for (unsigned int j = 0; j < line.size(); j++) {
+        for (int j = 0; j < line.size(); j++) {
             //충돌이 있는가?
             if ((line[j] | everyCombination[j]) == cell::crash) {
                 isThereCrash = true;
@@ -75,7 +75,7 @@ vector<solver::cell> solver::solveLine(vector<cell> line, vector<int> blockLengt
 #endif // CONSOLE
 
         //변화에 비트연산(block, blank모두가 change에 비트연산된 부분은 crash로 기록, 추후 반영이 되지 않음)
-        for (unsigned int j = 0; j < line.size(); j++) {
+        for (int j = 0; j < line.size(); j++) {
             change[j] = change[j] | everyCombination[j];
         }
     }
@@ -88,7 +88,7 @@ vector<solver::cell> solver::solveLine(vector<cell> line, vector<int> blockLengt
 #endif // CONSOLE
 
     //각 원소에 대해
-    for (unsigned int i = 0; i < line.size(); i++) {
+    for (int i = 0; i < line.size(); i++) {
         //확실한 부분만을 반영(change가 crash가 아닌 부분)
         if ((line[i] | change[i]) != cell::crash) {
             line[i] = line[i] | change[i];
@@ -104,7 +104,7 @@ vector<solver::cell> solver::solveLine(vector<cell> line, vector<int> blockLengt
     return line;
 }
 
-vector<vector<solver::cell>> solver::getEveryCellCombination(vector<int> blockLengths, int lineLength) {
+vector<vector<Solver::cell>> Solver::getEveryCellCombination(vector<int> blockLengths, int lineLength) {
     vector<vector<cell>> result;
 
     //길이가 1이면
@@ -129,11 +129,11 @@ vector<vector<solver::cell>> solver::getEveryCellCombination(vector<int> blockLe
         }
 
         //줄 길이 - (첫 번째 블록 길이 - 1) - 나머지 블록 길이 합 - (블록갯수 - 1)
-        for (unsigned int i = 0; i < lineLength - (blockLengthSum - 1) - (blockLengths.size() - 1); i++) {
+        for (int i = 0; i < lineLength - (blockLengthSum - 1) - (blockLengths.size() - 1); i++) {
             vector<cell> frontwardCombination;
             frontwardCombination.assign(i + blockLengths[0], cell::blank);
 
-            for (unsigned int j = i; j < i + blockLengths[0]; j++) {
+            for (int j = i; j < i + blockLengths[0]; j++) {
                 frontwardCombination[j] = cell::block;
             }
 
@@ -163,7 +163,7 @@ vector<vector<solver::cell>> solver::getEveryCellCombination(vector<int> blockLe
     return result;
 }
 
-void solver::printOneLine(const vector<cell>& line) {
+void Solver::printOneLine(const vector<cell> &line) {
     for (auto &i : line) {
         switch (i) {
             case cell::block:cout << "■";
@@ -181,35 +181,27 @@ void solver::printOneLine(const vector<cell>& line) {
     cout << endl;
 }
 
-void solver::printMap(const vector<vector<cell>>& map) {
-    for (auto &i : map) {
-        printOneLine(i);
-    }
-}
-
-void solver::print() {
+void Solver::print() {
     for (int i = 0; i < mHeight; i++) {
         for (int j = 0; j < mWidth; j++) {
             switch (mMap[j + i * mWidth]) {
-                case cell::block:cout << "■";
+                case cell::block:cout << "OO";
                     break;
 
-                case cell::none:
-                    //cout << "□";
-                    cout << "  ";
+                case cell::none:cout << "__";
                     break;
 
-                case cell::blank:cout << "×";
+                case cell::blank:cout << "  ";
                     break;
 
-                case cell::crash:cout << "≠";
+                case cell::crash:cout << "XX";
             }
         }
         cout << endl;
     }
 }
 
-vector<solver::cell> solver::getOneVerticalLine(int num) {
+vector<Solver::cell> Solver::getOneVerticalLine(int num) {
     vector<cell> result;
     result.reserve(mWidth);
 
@@ -220,7 +212,7 @@ vector<solver::cell> solver::getOneVerticalLine(int num) {
     return result;
 }
 
-vector<solver::cell> solver::getOneHorizetalLine(int num) {
+vector<Solver::cell> Solver::getOneHorizontalLine(int num) {
     vector<cell> result;
     result.reserve(mHeight);
 
@@ -231,27 +223,27 @@ vector<solver::cell> solver::getOneHorizetalLine(int num) {
     return result;
 }
 
-void solver::setOneVerticalLine(int num, const vector<cell> &line) {
+void Solver::setOneVerticalLine(int num, const vector<cell> &line) {
     for (int i = 0; i < mWidth; i++) {
         mMap[num * mWidth + i] = line[i];
     }
 }
 
-void solver::setOneHorizentalLine(int num, const vector<cell> &line) {
+void Solver::setOneHorizontalLine(int num, const vector<cell> &line) {
     for (int i = 0; i < mHeight; i++) {
         mMap[i * mWidth + num] = line[i];
     }
 }
 
-void solver::solveOneVerticalLine(int num) {
+void Solver::solveOneVerticalLine(int num) {
     this->setOneVerticalLine(num, solveLine(getOneVerticalLine(num), mVerticalBlockLengths[num]));
 }
 
-void solver::solveOneHorizentalLine(int num) {
-    this->setOneHorizentalLine(num, solveLine(getOneHorizetalLine(num), mHorizentalBlockLengths.at(num)));
+void Solver::solveOneHorizontalLine(int num) {
+    this->setOneHorizontalLine(num, solveLine(getOneHorizontalLine(num), mHorizontalBlockLengths.at(num)));
 }
 
-bool solver::isMapClear() {
+bool Solver::isMapClear() {
     bool result = true;
 
     for (int i = 0; i < mWidth * mHeight; i++) {
@@ -263,23 +255,7 @@ bool solver::isMapClear() {
     return result;
 }
 
-vector<vector<solver::cell>> solver::getMap() {
-    vector<vector<cell>> result(mHeight);
-
-    for (int i = 0; i < mHeight; i++) {
-        vector<cell> line(mWidth);
-
-        for (int j = 0; j < mWidth; j++) {
-            line.push_back(mMap[j + i * mWidth]);
-        }
-
-        result.push_back(line);
-    }
-
-    return result;
-}
-
-bool solver::operator==(const solver &right) {
+bool Solver::operator==(const Solver &right) {
     if (mWidth != right.mWidth || mHeight != right.mHeight) {
         return false;
     }
@@ -292,14 +268,20 @@ bool solver::operator==(const solver &right) {
     return true;
 }
 
-bool solver::operator!=(const solver &right) {
+bool Solver::operator!=(const Solver &right) {
     return !(*this == right);
 }
 
-solver::~solver() {
+Solver::~Solver() {
     delete[] mMap;
 }
 
-solver::cell operator|(solver::cell left, solver::cell right) {
-    return static_cast<solver::cell>(static_cast<int>(left) | static_cast<int>(right));
+void Solver::copyFrom(const Solver &s) {
+    for (int i = 0; i < s.mHeight * s.mWidth; ++i) {
+        mMap[i] = s.mMap[i];
+    }
+}
+
+Solver::cell operator|(Solver::cell left, Solver::cell right) {
+    return static_cast<Solver::cell>(static_cast<int>(left) | static_cast<int>(right));
 }
