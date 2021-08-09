@@ -4,12 +4,12 @@
 
 Solver::Solver(int width,
                int height,
-               vector<vector<int>> verticalBlockLengths,
-               vector<vector<int>> horizontalBlockLengths) : mWidth(width),
-                                                             mHeight(height),
-                                                             mHorizontalBlockLengths(std::move(horizontalBlockLengths)),
-                                                             mVerticalBlockLengths(std::move(verticalBlockLengths)),
-                                                             mMap(new cell[width * height])
+               std::vector<std::vector<int>> verticalBlockLengths,
+               std::vector<std::vector<int>> horizontalBlockLengths) : mWidth(width),
+                                                                       mHeight(height),
+                                                                       mHorizontalBlockLengths(std::move(horizontalBlockLengths)),
+                                                                       mVerticalBlockLengths(std::move(verticalBlockLengths)),
+                                                                       mMap(new cell[width * height])
 {
     for (int i = 0; i < mWidth * mHeight; i++)
     {
@@ -29,13 +29,13 @@ Solver::Solver(const Solver &original) : mWidth(original.mWidth), mHeight(origin
     }
 }
 
-vector<Solver::cell> Solver::solveLine(vector<cell> line, vector<int> blockLengths)
+std::vector<Solver::cell> Solver::solveLine(std::vector<cell> line, std::vector<int> blockLengths)
 {
     //모든 조합을 가져온다
-    vector<vector<cell>> everyCombinations = getEveryCellCombination(std::move(blockLengths), line.size());
+    std::vector<std::vector<cell>> everyCombinations = getEveryCellCombination(std::move(blockLengths), line.size());
 
     //어떤 원소를 바꿀지 저장
-    vector<cell> change;
+    std::vector<cell> change;
     //none은 다른 cell과 |연산하면 그 상태가 됨
     change.assign(line.size(), cell::none);
 
@@ -44,11 +44,11 @@ vector<Solver::cell> Solver::solveLine(vector<cell> line, vector<int> blockLengt
 
     for (int length : blockLengths)
     {
-        cout << length << endl;
+        std::cout << length << endl;
     }
 
     printOneLine(line);
-    cout << endl;
+    std::cout << endl;
 
 #endif // CONSOLE
 
@@ -88,7 +88,7 @@ vector<Solver::cell> Solver::solveLine(vector<cell> line, vector<int> blockLengt
 
     //디버깅
 #ifdef CONSOLE
-    cout << endl;
+    std::cout << endl;
     printOneLine(line);
     printOneLine(change);
 #endif // CONSOLE
@@ -106,15 +106,15 @@ vector<Solver::cell> Solver::solveLine(vector<cell> line, vector<int> blockLengt
     //디버깅
 #ifdef CONSOLE
     printOneLine(line);
-    cout << "-----------------------------------" << endl;
+    std::cout << "-----------------------------------" << endl;
 #endif // CONSOLE
 
     return line;
 }
 
-vector<vector<Solver::cell>> Solver::getEveryCellCombination(vector<int> blockLengths, int lineLength)
+std::vector<std::vector<Solver::cell>> Solver::getEveryCellCombination(std::vector<int> blockLengths, int lineLength)
 {
-    vector<vector<cell>> result;
+    std::vector<std::vector<cell>> result;
 
     //길이가 1이면
     if (blockLengths.size() == 1)
@@ -122,7 +122,7 @@ vector<vector<Solver::cell>> Solver::getEveryCellCombination(vector<int> blockLe
         for (int i = 0; i < lineLength - blockLengths[0] + 1; i++)
         {
             //처음부터 끝까지 경우의 수
-            vector<cell> temp;
+            std::vector<cell> temp;
             temp.assign(lineLength, cell::blank);
             for (int j = i; j < blockLengths[0] + i; j++)
             {
@@ -145,7 +145,7 @@ vector<vector<Solver::cell>> Solver::getEveryCellCombination(vector<int> blockLe
         //줄 길이 - (첫 번째 블록 길이 - 1) - 나머지 블록 길이 합 - (블록갯수 - 1)
         for (int i = 0; i < lineLength - (blockLengthSum - 1) - (blockLengths.size() - 1); i++)
         {
-            vector<cell> frontwardCombination;
+            std::vector<cell> frontwardCombination;
             frontwardCombination.assign(i + blockLengths[0], cell::blank);
 
             for (int j = i; j < i + blockLengths[0]; j++)
@@ -153,13 +153,13 @@ vector<vector<Solver::cell>> Solver::getEveryCellCombination(vector<int> blockLe
                 frontwardCombination[j] = cell::block;
             }
 
-            vector<int> backwardBlockLengths(blockLengths.begin() + 1, blockLengths.end());
-            vector<vector<cell>> backwardCombinations = getEveryCellCombination(backwardBlockLengths,
-                                                                                lineLength - i - blockLengths[0] - 1);
+            std::vector<int> backwardBlockLengths(blockLengths.begin() + 1, blockLengths.end());
+            std::vector<std::vector<cell>> backwardCombinations = getEveryCellCombination(backwardBlockLengths,
+                                                                                          lineLength - i - blockLengths[0] - 1);
 
             for (auto &backwardCombination : backwardCombinations)
             {
-                vector<cell> temp;
+                std::vector<cell> temp;
 
                 temp.reserve(frontwardCombination.size());
                 for (auto &k : frontwardCombination)
@@ -182,29 +182,29 @@ vector<vector<Solver::cell>> Solver::getEveryCellCombination(vector<int> blockLe
     return result;
 }
 
-void Solver::printOneLine(const vector<cell> &line)
+void Solver::printOneLine(const std::vector<cell> &line)
 {
     for (auto &i : line)
     {
         switch (i)
         {
         case cell::block:
-            cout << "■";
+            std::cout << "■";
             break;
 
         case cell::none:
-            cout << "  ";
+            std::cout << "  ";
             break;
 
         case cell::blank:
-            cout << "×";
+            std::cout << "×";
             break;
 
         case cell::crash:
-            cout << "≠";
+            std::cout << "≠";
         }
     }
-    cout << endl;
+    std::cout << std::endl;
 }
 
 void Solver::print()
@@ -216,28 +216,28 @@ void Solver::print()
             switch (mMap[j + i * mWidth])
             {
             case cell::block:
-                cout << "OO";
+                std::cout << "OO";
                 break;
 
             case cell::none:
-                cout << "__";
+                std::cout << "__";
                 break;
 
             case cell::blank:
-                cout << "  ";
+                std::cout << "  ";
                 break;
 
             case cell::crash:
-                cout << "XX";
+                std::cout << "XX";
             }
         }
-        cout << endl;
+        std::cout << std::endl;
     }
 }
 
-vector<Solver::cell> Solver::getOneVerticalLine(int num)
+std::vector<Solver::cell> Solver::getOneVerticalLine(int num)
 {
-    vector<cell> result;
+    std::vector<cell> result;
     result.reserve(mWidth);
 
     for (int i = 0; i < mWidth; i++)
@@ -248,9 +248,9 @@ vector<Solver::cell> Solver::getOneVerticalLine(int num)
     return result;
 }
 
-vector<Solver::cell> Solver::getOneHorizontalLine(int num)
+std::vector<Solver::cell> Solver::getOneHorizontalLine(int num)
 {
-    vector<cell> result;
+    std::vector<cell> result;
     result.reserve(mHeight);
 
     for (int i = 0; i < mHeight; i++)
@@ -261,7 +261,7 @@ vector<Solver::cell> Solver::getOneHorizontalLine(int num)
     return result;
 }
 
-void Solver::setOneVerticalLine(int num, const vector<cell> &line)
+void Solver::setOneVerticalLine(int num, const std::vector<cell> &line)
 {
     for (int i = 0; i < mWidth; i++)
     {
@@ -269,7 +269,7 @@ void Solver::setOneVerticalLine(int num, const vector<cell> &line)
     }
 }
 
-void Solver::setOneHorizontalLine(int num, const vector<cell> &line)
+void Solver::setOneHorizontalLine(int num, const std::vector<cell> &line)
 {
     for (int i = 0; i < mHeight; i++)
     {
