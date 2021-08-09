@@ -6,10 +6,12 @@
 
 using namespace std;
 
-class Solver {
- public:
+class Solver
+{
+public:
   //각 블럭의 상태를 나타내는 enum
-  enum class cell {
+  enum class cell
+  {
     block = 0b10,
     blank = 0b01,
     crash = 0b11,
@@ -61,12 +63,12 @@ class Solver {
   //두 객체가 다른지 판단하는 연산자 오버로딩
   bool operator!=(const Solver &right);
 
-  void copyFrom(const Solver& s);
+  void copyFrom(const Solver &s);
 
   //소멸자
   ~Solver();
 
- private:
+private:
   //너비와 높이
   const int mWidth, mHeight;
   //블럭 정보

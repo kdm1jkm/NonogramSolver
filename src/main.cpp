@@ -8,8 +8,10 @@ using namespace std;
 
 vector<string> tokenize(const string &originalString, char delimiter);
 
-int main(int argc, char *argv[]) {
-    if (argc < 3) {
+int main(int argc, char *argv[])
+{
+    if (argc < 3)
+    {
         cout << "Usage: " << argv[0] << " <file> <millisecond>" << endl;
         return EXIT_FAILURE;
     }
@@ -23,7 +25,8 @@ int main(int argc, char *argv[]) {
 
     vector<string> tokenizedString;
 
-    if (in.is_open()) {
+    if (in.is_open())
+    {
         in.seekg(0, ios::end);
         int fileSize = in.tellg();
 
@@ -38,24 +41,29 @@ int main(int argc, char *argv[]) {
         width = stoi(tokenizedString[0]);
         height = stoi(tokenizedString[1]);
 
-        if (tokenizedString.size() < width + height + 2) {
+        if (tokenizedString.size() < width + height + 2)
+        {
             cout << "Invalid file format" << endl;
             return -1;
         }
-    } else {
+    }
+    else
+    {
         cout << "Can't read " << argv[1] << endl;
         return EXIT_FAILURE;
     }
 
     vector<vector<int>> verticalBlockLengths;
     verticalBlockLengths.reserve(width);
-    for (int i = 0; i < width; i++) {
+    for (int i = 0; i < width; i++)
+    {
         vector<string> tokenizedLengths = tokenize(tokenizedString[i + 2], ' ');
 
         vector<int> verticalBlockLength;
         verticalBlockLength.reserve(tokenizedLengths.size());
 
-        for (const string &tokenizedLength : tokenizedLengths) {
+        for (const string &tokenizedLength : tokenizedLengths)
+        {
             verticalBlockLength.push_back(stoi(tokenizedLength));
         }
 
@@ -64,13 +72,15 @@ int main(int argc, char *argv[]) {
 
     vector<vector<int>> horizontalBlockLengths;
     horizontalBlockLengths.reserve(width);
-    for (int i = 0; i < width; i++) {
+    for (int i = 0; i < width; i++)
+    {
         vector<string> tokenizedLengths = tokenize(tokenizedString[i + 2 + width], ' ');
 
         vector<int> horizontalBlockLength;
         horizontalBlockLength.reserve(tokenizedLengths.size());
 
-        for (const string &tokenizedLength : tokenizedLengths) {
+        for (const string &tokenizedLength : tokenizedLengths)
+        {
             horizontalBlockLength.push_back(stoi(tokenizedLength));
         }
 
@@ -85,34 +95,42 @@ int main(int argc, char *argv[]) {
     system("cls");
     s.print();
 
-    while (!s.isMapClear()) {
-        for (int i = 0; i < height; i++) {
+    while (!s.isMapClear())
+    {
+        for (int i = 0; i < height; i++)
+        {
             s.solveOneVerticalLine(i);
 
-            if (s != preMap1) {
+            if (s != preMap1)
+            {
                 Sleep(interval);
                 system("cls");
                 s.print();
             }
             preMap1.copyFrom(s);
 
-            if (s.isMapClear())break;
+            if (s.isMapClear())
+                break;
         }
 
-        for (int i = 0; i < width; i++) {
+        for (int i = 0; i < width; i++)
+        {
             s.solveOneHorizontalLine(i);
 
-            if (s != preMap1) {
+            if (s != preMap1)
+            {
                 Sleep(interval);
                 system("cls");
                 s.print();
             }
             preMap1.copyFrom(s);
 
-            if (s.isMapClear())break;
+            if (s.isMapClear())
+                break;
         }
 
-        if (preMap2 == s) {
+        if (preMap2 == s)
+        {
             cout << "Can't Solve." << endl;
             break;
         }
@@ -126,14 +144,16 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-vector<string> tokenize(const string &originalString, const char delimiter) {
+vector<string> tokenize(const string &originalString, const char delimiter)
+{
     vector<string> result;
 
     string token;
 
     stringstream stream(originalString);
 
-    while (getline(stream, token, delimiter)) {
+    while (getline(stream, token, delimiter))
+    {
         result.push_back(token);
     }
 
