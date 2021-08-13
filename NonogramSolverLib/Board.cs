@@ -52,6 +52,8 @@ namespace NonogramSolverLib
                     for (var i = 0; i < Width; i++) yield return this[i, index];
 
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
             }
         }
     }
