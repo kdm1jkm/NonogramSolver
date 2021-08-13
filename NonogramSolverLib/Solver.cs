@@ -83,8 +83,8 @@ namespace NonogramSolverLib
                 int remainingLength = cell[0];
 
                 // 블록길이 합 + 마지막거 빼고 사이사이 간격
-                int otherLengthSum = cell.GetRange(1, cell.Count - 1).Sum() + (cell.Count - 2);
                 List<int> otherCell = cell.GetRange(1, cell.Count - 1);
+                int otherLengthSum = otherCell.Sum() + (cell.Count - 2);
 
                 // startPos는 뒤쪽 조합들(otherLengthSum)의 시작 위치. remainingLength + 1부터 시작(한칸 띄우고 시작)
                 // 해서 길이를 생각했을 때 끝까지(lineLength - otherLengthSum)까지 반복.
