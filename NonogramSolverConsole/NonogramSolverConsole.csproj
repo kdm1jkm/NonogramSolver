@@ -9,8 +9,4 @@
         <ProjectReference Include="..\NonogramSolverLib\NonogramSolverLib.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="dotnet-curses" Version="1.0.2" />
-    </ItemGroup>
-
 </Project>
