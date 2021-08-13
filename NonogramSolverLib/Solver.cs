@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace NonogramSolverLib
 {
     public class Solver
     {
+        [Flags]
         public enum Cell
         {
             BLOCK = 0b10,
@@ -20,9 +22,19 @@ namespace NonogramSolverLib
             _board = new Board<Cell>(width, height, Cell.NONE);
         }
 
-        public SolveResult SolveLine(List<int> cell, Board<Cell>.Direction direction)
+        public SolveResult SolveLine(int index, Board<Cell>.Direction direction, List<int> nums)
         {
-            return new SolveResult(new List<int> { 1, 2, 3, 4 });
+            List<Cell> line = _board.GetLine(index, direction).ToList();
+            List<List<Cell>> possibilities =
+                GetPossibilities(nums, line.Count)
+                    .FindAll(possibility => !MergeLine(line, possibility)
+                        .Contains(Cell.CRASH));
+
+            List<Cell> changes = possibilities.Aggregate(MergeLine);
+            _board.SetLine(index, direction, MergeLine(line, changes));
+            return new SolveResult(changes.Select((change, i) => new { change, i })
+                .Where(x => x.change is Cell.BLOCK or Cell.BLANK)
+                .Select(x => x.i).ToList());
         }
 
         public bool IsMapClear()
@@ -30,7 +42,18 @@ namespace NonogramSolverLib
             return !_board.Any(cell => cell is Cell.NONE or Cell.CRASH);
         }
 
-        public static List<List<Cell>> GetPossibilities(List<int> cell, int lineLength)
+        private static List<Cell> MergeLine(List<Cell> a, List<Cell> b)
+        {
+            if (a.Count != b.Count) throw new ArgumentException($"List size must be same, but {a.Count} != {b.Count}");
+
+            int count = a.Count;
+            List<Cell> list = new List<Cell>(count);
+            for (var i = 0; i < count; i++) list.Add(a[i] & b[i]);
+
+            return list;
+        }
+
+        private static List<List<Cell>> GetPossibilities(List<int> cell, int lineLength)
         {
             List<List<Cell>> result = new List<List<Cell>>();
 
