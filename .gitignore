@@ -55,6 +55,12 @@ _deps
 
 # End of https://www.toptal.com/developers/gitignore/api/cmake,c++
 
-.idea
 .vscode
 build
+
+.idea
+cmake-*
+
+.vs
+out
+CMakeSettings.json
