@@ -90,7 +90,7 @@ namespace NonogramSolverLib
             return result;
         }
 
-        public struct SolveResult
+        public readonly struct SolveResult
         {
             public int ChangeCount => ChangePos.Count;
             public List<int> ChangePos { get; }
