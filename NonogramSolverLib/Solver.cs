@@ -15,23 +15,23 @@ namespace NonogramSolverLib
             NONE = 0b00
         }
 
-        private readonly Board<Cell> _board;
+        public Board<Cell> Board { get; }
 
         public Solver(int width, int height)
         {
-            _board = new Board<Cell>(width, height, Cell.NONE);
+            Board = new Board<Cell>(width, height, Cell.NONE);
         }
 
         public SolveResult SolveLine(int index, Board<Cell>.Direction direction, List<int> nums)
         {
-            List<Cell> line = _board.GetLine(index, direction).ToList();
+            List<Cell> line = Board.GetLine(index, direction).ToList();
             List<List<Cell>> possibilities =
                 GetPossibilities(nums, line.Count)
                     .FindAll(possibility => !MergeLine(line, possibility)
                         .Contains(Cell.CRASH));
 
             List<Cell> changes = possibilities.Aggregate(MergeLine);
-            _board.SetLine(index, direction, MergeLine(line, changes));
+            Board.SetLine(index, direction, MergeLine(line, changes));
             return new SolveResult(changes.Select((change, i) => new { change, i })
                 .Where(x => x.change is Cell.BLOCK or Cell.BLANK)
                 .Select(x => x.i).ToList());
@@ -39,7 +39,7 @@ namespace NonogramSolverLib
 
         public bool IsMapClear()
         {
-            return !_board.Any(cell => cell is Cell.NONE or Cell.CRASH);
+            return !Board.Any(cell => cell is Cell.NONE or Cell.CRASH);
         }
 
         private static List<Cell> MergeLine(List<Cell> a, List<Cell> b)
