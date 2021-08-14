@@ -49,8 +49,12 @@ namespace NonogramSolverConsole
             Queue<(int i, Board<Solver.Cell>.Direction direction)> works =
                 new Queue<(int i, Board<Solver.Cell>.Direction direction)>(Lines());
 
+            ulong count = 0;
+
             while (true)
             {
+                Console.SetCursorPosition(0, 0);
+                Console.Write(count++);
                 if (works.Count == 0)
                 {
                     Console.Write("\nCan't Solve");
