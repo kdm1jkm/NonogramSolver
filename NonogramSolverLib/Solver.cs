@@ -55,53 +55,59 @@ namespace NonogramSolverLib
         {
             List<List<Cell>> result = new List<List<Cell>>();
 
-            if (cell.Count == 0)
+            switch (cell.Count)
             {
-                result.Add(Enumerable.Repeat(Cell.BLANK, lineLength).ToList());
-            }
-            else if (cell.Count == 1)
-            {
-                int length = cell[0];
-
-                // 5칸에 4개짜리면 2개 넣을 수 있음 (5 - 4 + 1 = 2)
-                for (var startPos = 0; startPos < lineLength - length + 1; startPos++)
+                case 0:
+                    result.Add(Enumerable.Repeat(Cell.BLANK, lineLength).ToList());
+                    break;
+                case 1:
                 {
-                    List<Cell> line = Enumerable.Repeat(Cell.BLANK, lineLength).ToList();
+                    int length = cell[0];
 
-                    for (var i = 0; i < length; i++) line[startPos + i] = Cell.BLOCK;
+                    // 5칸에 4개짜리면 2개 넣을 수 있음 (5 - 4 + 1 = 2)
+                    for (var startPos = 0; startPos < lineLength - length + 1; startPos++)
+                    {
+                        List<Cell> line = Enumerable.Repeat(Cell.BLANK, lineLength).ToList();
 
-                    result.Add(line);
+                        for (var i = 0; i < length; i++) line[startPos + i] = Cell.BLOCK;
+
+                        result.Add(line);
+                    }
+
+                    break;
                 }
-            }
-            else
-            {
-                int remainingLength = cell[0];
-
-                // 블록길이 합 + 마지막거 빼고 사이사이 간격
-                List<int> otherCell = cell.GetRange(1, cell.Count - 1);
-                int otherLengthSum = otherCell.Sum() + (cell.Count - 2);
-
-                // startPos는 뒤쪽 조합들(otherLengthSum)의 시작 위치. remainingLength + 1부터 시작(한칸 띄우고 시작)
-                // 해서 길이를 생각했을 때 끝까지(lineLength - otherLengthSum)까지 반복.
-                //
-                // startPos - 1 - x = remainingLength
-                // x = startPos - 1 - remainingLength
-                //
-                // value            range                                           length                          startPos = remainingLength + 1      startPos = lineLength - otherLengthSome
-                // Solver::blank    [0, startPos - 1 - remainingLength)             startPos - 1 - remainingLength  0                                   lineLength - otherLengthSum - 1 - remainingLength
-                // Solver::block    [startPos - 1 - remainingLength, startPos - 1)  remainingLength                 remainingLength                     remainingLength
-                // Solver::blank    [startPos - 1, startPos)                        1                               1                                   1
-                // otherResults     [startPos, lineLength)                          lineLength - startPos           lineLength - remainingLength - 1    otherLengthSum
-                // sum                                                              lineLength                      lineLength                          lineLength
-                for (int startPos = remainingLength + 1; startPos <= lineLength - otherLengthSum; startPos++)
+                default:
                 {
-                    List<Cell> line = new List<Cell>();
-                    line.AddRange(Enumerable.Repeat(Cell.BLANK, startPos - 1 - remainingLength));
-                    line.AddRange(Enumerable.Repeat(Cell.BLOCK, remainingLength));
-                    line.Add(Cell.BLANK);
+                    int remainingLength = cell[0];
 
-                    List<List<Cell>> otherResults = GetPossibilities(otherCell, lineLength - startPos);
-                    result.AddRange(otherResults.Select(otherResult => line.Concat(otherResult).ToList()));
+                    // 블록길이 합 + 마지막거 빼고 사이사이 간격
+                    List<int> otherCell = cell.GetRange(1, cell.Count - 1);
+                    int otherLengthSum = otherCell.Sum() + (cell.Count - 2);
+
+                    // startPos는 뒤쪽 조합들(otherLengthSum)의 시작 위치. remainingLength + 1부터 시작(한칸 띄우고 시작)
+                    // 해서 길이를 생각했을 때 끝까지(lineLength - otherLengthSum)까지 반복.
+                    //
+                    // startPos - 1 - x = remainingLength
+                    // x = startPos - 1 - remainingLength
+                    //
+                    // value            range                                           length                          startPos = remainingLength + 1      startPos = lineLength - otherLengthSome
+                    // Solver::blank    [0, startPos - 1 - remainingLength)             startPos - 1 - remainingLength  0                                   lineLength - otherLengthSum - 1 - remainingLength
+                    // Solver::block    [startPos - 1 - remainingLength, startPos - 1)  remainingLength                 remainingLength                     remainingLength
+                    // Solver::blank    [startPos - 1, startPos)                        1                               1                                   1
+                    // otherResults     [startPos, lineLength)                          lineLength - startPos           lineLength - remainingLength - 1    otherLengthSum
+                    // sum                                                              lineLength                      lineLength                          lineLength
+                    for (int startPos = remainingLength + 1; startPos <= lineLength - otherLengthSum; startPos++)
+                    {
+                        List<Cell> line = new List<Cell>();
+                        line.AddRange(Enumerable.Repeat(Cell.BLANK, startPos - 1 - remainingLength));
+                        line.AddRange(Enumerable.Repeat(Cell.BLOCK, remainingLength));
+                        line.Add(Cell.BLANK);
+
+                        List<List<Cell>> otherResults = GetPossibilities(otherCell, lineLength - startPos);
+                        result.AddRange(otherResults.Select(otherResult => line.Concat(otherResult).ToList()));
+                    }
+
+                    break;
                 }
             }
 
