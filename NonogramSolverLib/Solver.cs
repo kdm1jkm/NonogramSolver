@@ -57,7 +57,7 @@ namespace NonogramSolverLib
         private static List<List<Cell>> GetPossibilities(List<int> cell, int lineLength)
         {
             List<List<Cell>>[] cached = (
-                from possibilityCache in POSSIBILITY_CACHES
+                from possibilityCache in POSSIBILITY_CACHES.AsParallel()
                 where possibilityCache.cell.SequenceEqual(cell) && possibilityCache.length == lineLength
                 select possibilityCache.result).ToArray();
 
