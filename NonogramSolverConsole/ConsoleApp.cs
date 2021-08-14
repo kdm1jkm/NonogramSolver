@@ -9,26 +9,17 @@ namespace NonogramSolverConsole
 {
     public class ConsoleApp
     {
+        private readonly int _delay;
         private readonly Solver _solver;
         private readonly List<List<int>> _verticalInfo, _horizontalInfo;
 
         private readonly int _width, _height;
 
-        public ConsoleApp(string[] args)
+        public ConsoleApp(string file, int delay)
         {
-            string[] contents;
+            string[] contents = File.ReadAllLines(file);
 
-            while (true)
-            {
-                Console.Write("Enter file>>");
-                string input = Console.ReadLine();
-
-                if (input == null || !File.Exists(input)) continue;
-
-                contents = File.ReadAllLines(input);
-                break;
-            }
-
+            _delay = delay;
             List<int> metaInfo = contents[0].Split(" ").Select(int.Parse).ToList();
             _width = metaInfo[0];
             _height = metaInfo[1];
@@ -50,7 +41,6 @@ namespace NonogramSolverConsole
         {
             Console.CursorVisible = false;
             Console.Clear();
-            const int interval = 0;
 
             int startX = Math.Max((Console.WindowWidth - _width * 2) / 2, 0);
             int startY = Math.Max((Console.WindowHeight - _height) / 2, 0);
@@ -89,7 +79,7 @@ namespace NonogramSolverConsole
 
                 if (_solver.IsMapClear()) break;
 
-                Thread.Sleep(interval);
+                Thread.Sleep(_delay);
             }
 
             PrintSolver(startX, startY);
