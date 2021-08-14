@@ -52,8 +52,8 @@ namespace NonogramSolverConsole
             Console.Clear();
             const int interval = 0;
 
-            int startX = (Console.WindowWidth - _width * 2) / 2;
-            int startY = (Console.WindowHeight - _height) / 2;
+            int startX = Math.Max((Console.WindowWidth - _width * 2) / 2, 0);
+            int startY = Math.Max((Console.WindowHeight - _height) / 2, 0);
             PrintSolver(startX, startY);
 
             Queue<(int i, Board<Solver.Cell>.Direction direction)> works =
