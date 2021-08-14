@@ -6,7 +6,10 @@ namespace NonogramSolverConsole
     {
         private static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            var app = new ConsoleApp(args);
+            app.Start();
+
+            Console.Out.WriteLine();
         }
     }
 }
