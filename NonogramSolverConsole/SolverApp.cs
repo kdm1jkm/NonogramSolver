@@ -7,7 +7,7 @@ using NonogramSolverLib;
 
 namespace NonogramSolverConsole
 {
-    public class ConsoleApp
+    public class SolverApp
     {
         private readonly int _delay;
         private readonly Solver _solver;
@@ -15,7 +15,7 @@ namespace NonogramSolverConsole
 
         private readonly int _width, _height;
 
-        public ConsoleApp(string file, int delay)
+        public SolverApp(string file, int delay)
         {
             string[] contents = File.ReadAllLines(file);
 

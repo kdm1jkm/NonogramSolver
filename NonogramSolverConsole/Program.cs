@@ -22,7 +22,7 @@ namespace NonogramSolverConsole
                 input = Console.ReadLine();
             }
 
-            var app = new ConsoleApp(file, delay);
+            var app = new SolverApp(file, delay);
             app.Start();
 
             Console.Out.WriteLine("\nPress any key to continue...");
