@@ -15,6 +15,9 @@ namespace NonogramSolverLib
             NONE = 0b00
         }
 
+        private static readonly List<(List<int> cell, int length, List<List<Cell>> result)> POSSIBILITY_CACHES
+            = new List<(List<int>, int, List<List<Cell>>)>();
+
         public Solver(int width, int height)
         {
             Board = new Board<Cell>(width, height, Cell.NONE);
@@ -53,6 +56,13 @@ namespace NonogramSolverLib
 
         private static List<List<Cell>> GetPossibilities(List<int> cell, int lineLength)
         {
+            List<List<Cell>>[] cached = (
+                from possibilityCache in POSSIBILITY_CACHES
+                where possibilityCache.cell.SequenceEqual(cell) && possibilityCache.length == lineLength
+                select possibilityCache.result).ToArray();
+
+            if (cached.Length != 0) return cached[0];
+
             List<List<Cell>> result = new List<List<Cell>>();
 
             switch (cell.Count)
@@ -110,6 +120,8 @@ namespace NonogramSolverLib
                     break;
                 }
             }
+
+            POSSIBILITY_CACHES.Add((cell, lineLength, result));
 
             return result;
         }
