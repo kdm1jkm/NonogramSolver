@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace NonogramSolverLib
 {
@@ -46,11 +47,7 @@ namespace NonogramSolverLib
         {
             if (a.Count != b.Count) throw new ArgumentException($"List size must be same, but {a.Count} != {b.Count}");
 
-            int count = a.Count;
-            List<Cell> list = new List<Cell>(count);
-            for (var i = 0; i < count; i++) list.Add(a[i] & b[i]);
-
-            return list;
+            return Enumerable.Range(0, a.Count).Select(i => a[i] & b[i]).ToList();
         }
 
         private static List<List<Cell>> GetPossibilities(List<int> cell, int lineLength)
@@ -59,10 +56,7 @@ namespace NonogramSolverLib
 
             if (cell.Count == 0)
             {
-                List<Cell> line = Enumerable.Repeat(Cell.BLANK, lineLength).ToList();
-                for (var i = 0; i < lineLength; i++) line.Add(Cell.BLANK);
-
-                result.Add(line);
+                result.Add(Enumerable.Repeat(Cell.BLANK, lineLength).ToList());
             }
             else if (cell.Count == 1)
             {
