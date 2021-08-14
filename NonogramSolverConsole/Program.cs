@@ -7,25 +7,19 @@ namespace NonogramSolverConsole
     {
         private static void Main(string[] args)
         {
-            string file;
-            while (true)
+            string file = args.Length > 0 ? args[0] : null;
+            while (file == null || !File.Exists(file))
             {
                 Console.Write("Enter file>>");
                 file = Console.ReadLine();
-
-                if (file == null || !File.Exists(file)) continue;
-                break;
             }
 
             int delay;
-            while (true)
+            string input = args.Length > 1 ? args[1] : null;
+            while (input == null || !int.TryParse(input, out delay))
             {
                 Console.Write("Enter delay>>");
-                string input = Console.ReadLine();
-
-                if (input == null || !int.TryParse(input, out delay)) continue;
-
-                break;
+                input = Console.ReadLine();
             }
 
             var app = new ConsoleApp(file, delay);
