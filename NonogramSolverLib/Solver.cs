@@ -15,9 +15,6 @@ namespace NonogramSolverLib
             NONE = 0b00
         }
 
-        private static readonly List<(List<int> cell, int length, List<List<Cell>> result)> POSSIBILITY_CACHES
-            = new List<(List<int>, int, List<List<Cell>>)>();
-
         public Solver(int width, int height)
         {
             Board = new Board<Cell>(width, height, Cell.NONE);
@@ -28,10 +25,9 @@ namespace NonogramSolverLib
         public SolveResult SolveLine(int index, Board<Cell>.Direction direction, List<int> nums)
         {
             List<Cell> line = Board.GetLine(index, direction).ToList();
-            List<List<Cell>> possibilities =
-                GetPossibilities(nums, line.Count)
-                    .FindAll(possibility => !MergeLine(line, possibility)
-                        .Contains(Cell.CRASH));
+            IEnumerable<List<Cell>> possibilities =
+                GetPossibilities(nums, line.Count).Where(possibility =>
+                    !MergeLine(line, possibility).Contains(Cell.CRASH));
 
             List<Cell> changes = possibilities.Aggregate(MergeLine)
                 .Select(cell => cell == Cell.CRASH ? Cell.NONE : cell).ToList();
@@ -54,22 +50,14 @@ namespace NonogramSolverLib
             return Enumerable.Range(0, a.Count).Select(i => a[i] | b[i]).ToList();
         }
 
-        private static List<List<Cell>> GetPossibilities(List<int> cell, int lineLength)
+        private static IEnumerable<List<Cell>> GetPossibilities(List<int> cell, int lineLength)
         {
-            List<List<Cell>>[] cached = (
-                from possibilityCache in POSSIBILITY_CACHES.AsParallel()
-                where possibilityCache.cell.SequenceEqual(cell) && possibilityCache.length == lineLength
-                select possibilityCache.result).ToArray();
-
-            if (cached.Length != 0) return cached[0];
-
-            List<List<Cell>> result = new List<List<Cell>>();
-
             switch (cell.Count)
             {
                 case 0:
-                    result.Add(Enumerable.Repeat(Cell.BLANK, lineLength).ToList());
-                    break;
+                    yield return Enumerable.Repeat(Cell.BLANK, lineLength).ToList();
+                    yield break;
+
                 case 1:
                 {
                     int length = cell[0];
@@ -81,10 +69,10 @@ namespace NonogramSolverLib
 
                         for (var i = 0; i < length; i++) line[startPos + i] = Cell.BLOCK;
 
-                        result.Add(line);
+                        yield return line;
                     }
 
-                    break;
+                    yield break;
                 }
                 default:
                 {
@@ -113,17 +101,15 @@ namespace NonogramSolverLib
                         line.AddRange(Enumerable.Repeat(Cell.BLOCK, remainingLength));
                         line.Add(Cell.BLANK);
 
-                        List<List<Cell>> otherResults = GetPossibilities(otherCell, lineLength - startPos);
-                        result.AddRange(otherResults.Select(otherResult => line.Concat(otherResult).ToList()));
+                        IEnumerable<IEnumerable<Cell>> combined = GetPossibilities(otherCell, lineLength - startPos)
+                            .Select(otherResult => line.Concat(otherResult));
+
+                        foreach (IEnumerable<Cell> cells in combined) yield return cells.ToList();
                     }
 
-                    break;
+                    yield break;
                 }
             }
-
-            POSSIBILITY_CACHES.Add((cell, lineLength, result));
-
-            return result;
         }
 
         public readonly struct SolveResult
