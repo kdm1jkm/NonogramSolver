@@ -31,10 +31,12 @@ namespace NonogramSolverLib
                     .FindAll(possibility => !MergeLine(line, possibility)
                         .Contains(Cell.CRASH));
 
-            List<Cell> changes = possibilities.Aggregate(MergeLine);
-            Board.SetLine(index, direction, MergeLine(line, changes));
-            return new SolveResult(changes.Select((change, i) => new { change, i })
-                .Where(x => x.change is Cell.BLOCK or Cell.BLANK)
+            List<Cell> changes = possibilities.Aggregate(MergeLine)
+                .Select(cell => cell == Cell.CRASH ? Cell.NONE : cell).ToList();
+            List<Cell> appliedLine = MergeLine(line, changes);
+            Board.SetLine(index, direction, appliedLine);
+            return new SolveResult(line.Select((cell, i) => new { cell, i })
+                .Where(x => x.cell != appliedLine[x.i])
                 .Select(x => x.i).ToList());
         }
 
@@ -47,7 +49,7 @@ namespace NonogramSolverLib
         {
             if (a.Count != b.Count) throw new ArgumentException($"List size must be same, but {a.Count} != {b.Count}");
 
-            return Enumerable.Range(0, a.Count).Select(i => a[i] & b[i]).ToList();
+            return Enumerable.Range(0, a.Count).Select(i => a[i] | b[i]).ToList();
         }
 
         private static List<List<Cell>> GetPossibilities(List<int> cell, int lineLength)
