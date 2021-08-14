@@ -9,7 +9,8 @@ namespace NonogramSolverConsole
             var app = new ConsoleApp(args);
             app.Start();
 
-            Console.Out.WriteLine();
+            Console.Out.WriteLine("\nPress any key to continue...");
+            Console.ReadKey(true);
         }
     }
 }

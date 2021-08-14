@@ -9,6 +9,11 @@ namespace NonogramSolverConsole
 {
     public class ConsoleApp
     {
+        private readonly Solver _solver;
+        private readonly List<List<int>> _verticalInfo, _horizontalInfo;
+
+        private readonly int _width, _height;
+
         public ConsoleApp(string[] args)
         {
             string[] contents;
@@ -28,10 +33,7 @@ namespace NonogramSolverConsole
             _width = metaInfo[0];
             _height = metaInfo[1];
 
-            if (contents.Length != _width + _height + 1)
-            {
-                throw new Exception("File is not valid");
-            }
+            if (contents.Length != _width + _height + 1) throw new Exception("File is not valid");
 
             List<List<int>> convertedContent = contents
                 .Where((_, i) => i != 0)
@@ -44,11 +46,6 @@ namespace NonogramSolverConsole
             _solver = new Solver(_width, _height);
         }
 
-        private readonly Solver _solver;
-
-        private readonly int _width, _height;
-        private readonly List<List<int>> _verticalInfo, _horizontalInfo;
-
         public void Start()
         {
             Console.CursorVisible = false;
@@ -58,49 +55,56 @@ namespace NonogramSolverConsole
             int startX = (Console.WindowWidth - _width * 2) / 2;
             int startY = (Console.WindowHeight - _height) / 2;
             PrintSolver(startX, startY);
-            while (!_solver.IsMapClear())
+
+            Queue<(int i, Board<Solver.Cell>.Direction direction)> works =
+                new Queue<(int i, Board<Solver.Cell>.Direction direction)>(Lines());
+
+            while (true)
             {
-                foreach ((int i, var direction, List<int> info) in Lines())
+                if (works.Count == 0)
                 {
-                    var result = _solver.SolveLine(i, direction, info);
-                    if (result.ChangeCount == 0)
-                    {
-                        continue;
-                    }
-
-
-                    foreach ((int x, int y) in direction == Board<Solver.Cell>.Direction.HORIZONTAL
-                        ? result.ChangePos.Select(pos => (pos, i))
-                        : result.ChangePos.Select(pos => (i, pos)))
-                    {
-                        Console.SetCursorPosition(startX + x * 2, startY + y);
-                        PrintCell(_solver.Board[x, y]);
-                    }
-
-
-                    if (_solver.IsMapClear())
-                    {
-                        break;
-                    }
-
-                    Thread.Sleep(interval);
+                    Console.Write("\nCan't Solve");
+                    break;
                 }
+
+                (int i, var direction) = works.Dequeue();
+                var result = _solver.SolveLine(i, direction, GetInfo(i, direction));
+
+                if (result.ChangeCount == 0) continue;
+
+                var otherDirection =
+                    direction == Board<Solver.Cell>.Direction.VERTICAL
+                        ? Board<Solver.Cell>.Direction.HORIZONTAL
+                        : Board<Solver.Cell>.Direction.VERTICAL;
+
+                foreach (int pos in result.ChangePos) works.Enqueue((pos, otherDirection));
+
+                foreach ((int x, int y) in direction == Board<Solver.Cell>.Direction.HORIZONTAL
+                    ? result.ChangePos.Select(pos => (pos, i))
+                    : result.ChangePos.Select(pos => (i, pos)))
+                {
+                    Console.SetCursorPosition(startX + x * 2, startY + y);
+                    PrintCell(_solver.Board[x, y]);
+                }
+
+                if (_solver.IsMapClear()) break;
+
+                Thread.Sleep(interval);
             }
 
             PrintSolver(startX, startY);
         }
 
-        private IEnumerable<(int, Board<Solver.Cell>.Direction HORIZONTAL, List<int>)> Lines()
+        private IEnumerable<(int, Board<Solver.Cell>.Direction)> Lines()
         {
-            for (int i = 0; i < _height; i++)
-            {
-                yield return (i, Board<Solver.Cell>.Direction.HORIZONTAL, _horizontalInfo[i]);
-            }
+            for (var i = 0; i < _height; i++) yield return (i, Board<Solver.Cell>.Direction.HORIZONTAL);
 
-            for (int i = 0; i < _width; i++)
-            {
-                yield return (i, Board<Solver.Cell>.Direction.VERTICAL, _verticalInfo[i]);
-            }
+            for (var i = 0; i < _width; i++) yield return (i, Board<Solver.Cell>.Direction.VERTICAL);
+        }
+
+        private List<int> GetInfo(int i, Board<Solver.Cell>.Direction direction)
+        {
+            return direction == Board<Solver.Cell>.Direction.HORIZONTAL ? _horizontalInfo[i] : _verticalInfo[i];
         }
 
         private void PrintSolver(int x, int y)
@@ -110,10 +114,7 @@ namespace NonogramSolverConsole
             {
                 Console.SetCursorPosition(x, y + i);
                 List<Solver.Cell> line = _solver.Board.GetLine(i, Board<Solver.Cell>.Direction.HORIZONTAL).ToList();
-                foreach (Solver.Cell cell in line)
-                {
-                    PrintCell(cell);
-                }
+                foreach (var cell in line) PrintCell(cell);
             }
         }
 

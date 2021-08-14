@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace NonogramSolverLib
 {
@@ -16,12 +15,12 @@ namespace NonogramSolverLib
             NONE = 0b00
         }
 
-        public Board<Cell> Board { get; }
-
         public Solver(int width, int height)
         {
             Board = new Board<Cell>(width, height, Cell.NONE);
         }
+
+        public Board<Cell> Board { get; }
 
         public SolveResult SolveLine(int index, Board<Cell>.Direction direction, List<int> nums)
         {

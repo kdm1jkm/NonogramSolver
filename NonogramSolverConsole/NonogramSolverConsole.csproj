@@ -6,7 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\NonogramSolverLib\NonogramSolverLib.csproj" />
+        <ProjectReference Include="..\NonogramSolverLib\NonogramSolverLib.csproj"/>
     </ItemGroup>
 
 </Project>
