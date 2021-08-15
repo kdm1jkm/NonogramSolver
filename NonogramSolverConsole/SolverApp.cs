@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -11,6 +12,7 @@ namespace NonogramSolverConsole
     public class SolverApp
     {
         private readonly int _delay;
+        private readonly int _length;
         private readonly Solver _solver;
 
         private readonly int _width, _height;
@@ -56,6 +58,7 @@ namespace NonogramSolverConsole
             List<List<int>> verticalInfo = convertedContent.GetRange(_height, _width);
 
             _solver = new Solver(_width, _height, verticalInfo, horizontalInfo);
+            _length = _width * _height;
         }
 
         public void Start()
@@ -66,27 +69,28 @@ namespace NonogramSolverConsole
             int x = (Console.WindowWidth - _width * 2) / 2;
             int y = (Console.WindowHeight - _height) / 2;
 
-            var isDrawable = true;
+            bool isDrawable = !(x < 0 || y < 1);
 
-            if (x < 0 || y < 0)
-            {
+            if (isDrawable)
+                PrintSolver(x, y);
+            else
                 Console.Out.WriteLine("Can't draw.");
-                // TEMP
-                // return;
-                isDrawable = false;
-            }
-
-            if (isDrawable) PrintSolver(x, y);
 
             Queue<(int i, Direction direction)> works =
                 new Queue<(int i, Direction direction)>(Lines());
 
-            ulong count = 0;
-
             while (true)
             {
                 Console.SetCursorPosition(0, isDrawable ? 0 : Console.GetCursorPosition().Top);
-                Console.Write($"iter:{count++}");
+                int countDetermined = _solver.CountDetermined();
+                Console.Write(
+                    "\r" +
+                    $"{_solver.GetCachedLength()}  " +
+                    $"{Process.GetCurrentProcess().WorkingSet64 / 1024 / 1024}mb  " +
+                    $"{countDetermined}/{_length}  " +
+                    $"{countDetermined * 100 / _length}%  "
+                );
+                while (Console.CursorLeft < Console.BufferWidth - 1) Console.Write(" ");
 
                 if (works.Count == 0)
                 {
@@ -123,7 +127,7 @@ namespace NonogramSolverConsole
                 Thread.Sleep(_delay);
             }
 
-            PrintSolver(x, y);
+            if (isDrawable) PrintSolver(x, y);
         }
 
         private IEnumerable<(int, Direction)> Lines()

@@ -7,7 +7,7 @@ namespace NonogramSolverLib
     public class Solver
     {
         [Flags]
-        public enum Cell
+        public enum Cell : byte
         {
             BLOCK = 0b10,
             BLANK = 0b01,
@@ -53,6 +53,7 @@ namespace NonogramSolverLib
             _calculatedPossibilities = new Dictionary<(int, Direction), List<List<Cell>>>();
         }
 
+
         /// <summary>
         ///     한 라인에서 알아낼 수 있는 정보를 모두 알아내 <see cref="Board" />에 적용한다.
         /// </summary>
@@ -93,6 +94,12 @@ namespace NonogramSolverLib
                 .Select(x => x.i).ToList());
         }
 
+        public int GetCachedLength()
+        {
+            return _calculatedPossibilities.Values
+                .Sum(calculatedPossibility => calculatedPossibility.Count * calculatedPossibility[0].Count);
+        }
+
         /// <summary>
         ///     맵이 클리어 상태인지 확인한다. 맵에 <see cref="Cell.NONE" /> 또는 <see cref="Cell.CRASH" />가 없으면 클리어로 판단한다.
         /// </summary>
@@ -100,6 +107,17 @@ namespace NonogramSolverLib
         public bool IsMapClear()
         {
             return !Board.Any(cell => cell is Cell.NONE or Cell.CRASH);
+        }
+
+        public int CountDetermined()
+        {
+            var sum = 0;
+            for (var i = 0; i < Board.Height; i++)
+                sum += Board
+                    .GetLine(i, Direction.HORIZONTAL)
+                    .Count(cell => cell is Cell.BLANK or Cell.BLOCK);
+
+            return sum;
         }
 
         private List<int> GetInfo(int index, Direction direction)
