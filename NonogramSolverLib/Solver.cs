@@ -87,6 +87,9 @@ namespace NonogramSolverLib
             // 적용된 라인으로 세팅
             Board.SetLine(index, direction, mergedLine);
 
+            // 메모리 확보
+            GC.Collect();
+
             // 다른 부분의 인덱스
             return new SolveResult(line
                 .Select((cell, i) => (cell, i))
