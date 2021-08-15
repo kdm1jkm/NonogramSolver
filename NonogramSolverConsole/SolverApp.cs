@@ -76,8 +76,14 @@ namespace NonogramSolverConsole
             else
                 Console.Out.WriteLine("Can't draw.");
 
-            Queue<(int i, Direction direction)> works =
-                new Queue<(int i, Direction direction)>(Lines());
+            List<(int i, Direction direction)> lines = Lines().ToList();
+            lines.Sort((a, b) => -(int)(
+                GetNumberOfCases(_solver.GetInfo(b.i, b.direction),
+                    b.direction == Direction.VERTICAL ? _height : _width)
+                - GetNumberOfCases(_solver.GetInfo(a.i, a.direction),
+                    a.direction == Direction.VERTICAL ? _height : _width)));
+
+            Queue<(int i, Direction direction)> works = new Queue<(int i, Direction direction)>(lines);
 
             while (true)
             {
@@ -130,7 +136,7 @@ namespace NonogramSolverConsole
             if (isDrawable) PrintSolver(x, y);
         }
 
-        private IEnumerable<(int, Direction)> Lines()
+        private IEnumerable<(int i, Direction direction)> Lines()
         {
             for (var i = 0; i < _height; i++) yield return (i, Direction.HORIZONTAL);
 

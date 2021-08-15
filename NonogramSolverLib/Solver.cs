@@ -123,7 +123,7 @@ namespace NonogramSolverLib
             return sum;
         }
 
-        private List<int> GetInfo(int index, Direction direction)
+        public List<int> GetInfo(int index, Direction direction)
         {
             return direction == Direction.VERTICAL
                 ? _verticalInfos[index]
@@ -135,6 +135,35 @@ namespace NonogramSolverLib
             if (a.Count != b.Count) throw new ArgumentException($"List size must be same, but {a.Count} != {b.Count}");
 
             return Enumerable.Range(0, a.Count).Select(i => a[i] | b[i]).ToList();
+        }
+
+        public static uint GetNumberOfCases(List<int> info, int lineLength)
+        {
+            switch (info.Count)
+            {
+                case 0:
+                    return (uint)lineLength;
+
+                case 1:
+                    return (uint)(lineLength - info[0] + 1);
+
+                default:
+                {
+                    int remainingLength = info[0];
+
+                    // 블록길이 합 + 마지막거 빼고 사이사이 간격
+                    List<int> otherCell = info.GetRange(1, info.Count - 1);
+                    int otherLengthSum = otherCell.Sum() + (info.Count - 2);
+
+                    uint sum = 0;
+                    for (int startPos = remainingLength + 1; startPos <= lineLength - otherLengthSum; startPos++)
+                    {
+                        sum += GetNumberOfCases(otherCell, lineLength - startPos);
+                    }
+
+                    return sum;
+                }
+            }
         }
 
         /// <summary>
