@@ -28,30 +28,30 @@ namespace NonogramSolverLib
             return _values.Any(predicate);
         }
 
-        public IEnumerable<T> GetLine(int index, Direction direction)
+        public IEnumerable<T> GetLine(LineInfo lineInfo)
         {
-            if (direction == Direction.VERTICAL)
+            if (lineInfo.Direction == Direction.VERTICAL)
                 for (var i = 0; i < Height; i++)
-                    yield return this[index, i];
+                    yield return this[lineInfo.Index, i];
             else
                 for (var i = 0; i < Width; i++)
-                    yield return this[i, index];
+                    yield return this[i, lineInfo.Index];
         }
 
-        public void SetLine(int index, Direction direction, List<T> line)
+        public void SetLine(LineInfo lineInfo, List<T> values)
         {
             // ReSharper disable once ConvertIfStatementToSwitchStatement
-            if (direction == Direction.VERTICAL && line.Count != Height)
-                throw new ArgumentException($"line.Count and Height must be same, but {line.Count != Height}");
-            if (direction == Direction.HORIZONTAL && line.Count != Width)
-                throw new ArgumentException($"line.Count and Width must be same, but {line.Count != Width}");
+            if (lineInfo.Direction == Direction.VERTICAL && values.Count != Height)
+                throw new ArgumentException($"line.Count and Height must be same, but {values.Count != Height}");
+            if (lineInfo.Direction == Direction.HORIZONTAL && values.Count != Width)
+                throw new ArgumentException($"line.Count and Width must be same, but {values.Count != Width}");
 
-            if (direction == Direction.VERTICAL)
+            if (lineInfo.Direction == Direction.VERTICAL)
                 for (var i = 0; i < Height; i++)
-                    this[index, i] = line[i];
+                    this[lineInfo.Index, i] = values[i];
             else
                 for (var i = 0; i < Width; i++)
-                    this[i, index] = line[i];
+                    this[i, lineInfo.Index] = values[i];
         }
     }
 }

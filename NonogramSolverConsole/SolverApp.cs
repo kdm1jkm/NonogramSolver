@@ -63,6 +63,11 @@ namespace NonogramSolverConsole
 
         public void Start()
         {
+            Stack<LineInfo> works = new Stack<LineInfo>(Lines()
+                .Select(line => (line, _solver.GetNumberOfCases(line, true)))
+                .OrderByDescending(x => x.Item2)
+                .Select(x => x.line));
+
             Console.CursorVisible = false;
             Console.Clear();
 
@@ -76,36 +81,32 @@ namespace NonogramSolverConsole
             else
                 Console.Out.WriteLine("Can't draw.");
 
-            List<(int i, Direction direction)> lines = Lines().ToList();
-            lines.Sort((a, b) => -(int)(
-                GetNumberOfCases(_solver.GetInfo(b.i, b.direction),
-                    b.direction == Direction.VERTICAL ? _height : _width)
-                - GetNumberOfCases(_solver.GetInfo(a.i, a.direction),
-                    a.direction == Direction.VERTICAL ? _height : _width)));
-
-            Queue<(int i, Direction direction)> works = new Queue<(int i, Direction direction)>(lines);
-
             while (true)
             {
-                Console.SetCursorPosition(0, isDrawable ? 0 : Console.GetCursorPosition().Top);
-                int countDetermined = _solver.CountDetermined();
-                Console.Write(
-                    "\r" +
-                    $"{_solver.GetCachedLength()}  " +
-                    $"{Process.GetCurrentProcess().WorkingSet64 / 1024 / 1024}mb  " +
-                    $"{countDetermined}/{_length}  " +
-                    $"{countDetermined * 100 / _length}%  "
-                );
-                while (Console.CursorLeft < Console.BufferWidth - 1) Console.Write(" ");
-
                 if (works.Count == 0)
                 {
                     Console.Write("\nCan't Solve");
                     break;
                 }
 
-                (int i, var direction) = works.Dequeue();
-                var result = _solver.SolveLine(i, direction);
+                (int i, var direction) = works.Pop();
+
+                Console.SetCursorPosition(0, isDrawable ? 0 : 1);
+
+                int countDetermined = _solver.CountDetermined();
+                Console.Write(
+                    "\r" +
+                    $"Cached: {_solver.GetCachedLength()}  " +
+                    $"Memory: {Process.GetCurrentProcess().WorkingSet64 / 1024 / 1024}mb  " +
+                    $"{countDetermined}/{_length}  " +
+                    $"{countDetermined * 100 / _length}%  " +
+                    $"{i}/{direction.ToString()}"
+                );
+                while (Console.CursorLeft < Console.BufferWidth - 1) Console.Write(" ");
+
+                if (isDrawable) Thread.Sleep(_delay);
+
+                var result = _solver.SolveLine(new LineInfo(i, direction));
 
                 if (result.ChangeCount == 0) continue;
 
@@ -114,7 +115,13 @@ namespace NonogramSolverConsole
                         ? Direction.HORIZONTAL
                         : Direction.VERTICAL;
 
-                foreach (int pos in result.ChangePos) works.Enqueue((pos, otherDirection));
+                IEnumerable<LineInfo> nextLines = result.ChangePos
+                    .Select(pos => new LineInfo(pos, otherDirection))
+                    .Select(pos => (pos, _solver.GetNumberOfCases(pos)))
+                    .OrderByDescending(value => value.Item2)
+                    .Select(value => value.pos);
+
+                foreach (var nextLine in nextLines) works.Push(nextLine);
 
                 if (_solver.IsMapClear()) break;
 
@@ -129,18 +136,16 @@ namespace NonogramSolverConsole
                     Console.SetCursorPosition(x + changedPos.x * 2, y + changedPos.y);
                     PrintCell(_solver.Board[changedPos.x, changedPos.y]);
                 }
-
-                Thread.Sleep(_delay);
             }
 
             if (isDrawable) PrintSolver(x, y);
         }
 
-        private IEnumerable<(int i, Direction direction)> Lines()
+        private IEnumerable<LineInfo> Lines()
         {
-            for (var i = 0; i < _height; i++) yield return (i, Direction.HORIZONTAL);
+            for (var i = 0; i < _height; i++) yield return new LineInfo(i, Direction.HORIZONTAL);
 
-            for (var i = 0; i < _width; i++) yield return (i, Direction.VERTICAL);
+            for (var i = 0; i < _width; i++) yield return new LineInfo(i, Direction.VERTICAL);
         }
 
         private void PrintSolver(int x, int y)
@@ -148,7 +153,7 @@ namespace NonogramSolverConsole
             for (var i = 0; i < _solver.Board.Height; i++)
             {
                 Console.SetCursorPosition(x, y + i);
-                List<Cell> line = _solver.Board.GetLine(i, Direction.HORIZONTAL).ToList();
+                List<Cell> line = _solver.Board.GetLine(new LineInfo(i, Direction.HORIZONTAL)).ToList();
                 foreach (var cell in line) PrintCell(cell);
             }
         }

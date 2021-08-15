@@ -19,7 +19,7 @@ namespace NonogramSolverLib
         ///     가능성 캐시 저장소이다. 해당 라인에서 나올 수 있는 가능성을 모두 저장하고 있다. 그러나 <see cref="Board" /> 클래스에서
         ///     저장하고 있는 해당 라인과 병합했을 때 <see cref="Cell.CRASH" />가 나타나는 라인은 제거된다.
         /// </summary>
-        private readonly Dictionary<(int, Direction), List<List<Cell>>> _calculatedPossibilities;
+        private readonly Dictionary<LineInfo, List<List<Cell>>> _calculatedPossibilities;
 
         /// <summary>
         ///     수평 방향 라인의 정보를 담고 있다.
@@ -50,32 +50,31 @@ namespace NonogramSolverLib
 
             Board = new Board<Cell>(width, height, Cell.NONE);
 
-            _calculatedPossibilities = new Dictionary<(int, Direction), List<List<Cell>>>();
+            _calculatedPossibilities = new Dictionary<LineInfo, List<List<Cell>>>();
         }
 
 
         /// <summary>
         ///     한 라인에서 알아낼 수 있는 정보를 모두 알아내 <see cref="Board" />에 적용한다.
         /// </summary>
-        /// <param name="index">줄의 인덱스</param>
-        /// <param name="direction">줄의 방향</param>
+        /// <param name="lineInfo">알아낼 정보</param>
         /// <returns>알아낸 정보 요약</returns>
-        public SolveResult SolveLine(int index, Direction direction)
+        public SolveResult SolveLine(LineInfo lineInfo)
         {
-            List<int> info = GetInfo(index, direction);
-            List<Cell> line = Board.GetLine(index, direction).ToList();
+            List<int> info = GetInfo(lineInfo);
+            List<Cell> line = Board.GetLine(lineInfo).ToList();
 
             // 계산되지 않은 경우 계산
-            if (!_calculatedPossibilities.ContainsKey((index, direction)))
-                _calculatedPossibilities[(index, direction)] = GetPossibilities(info, line.Count).ToList();
+            if (!_calculatedPossibilities.ContainsKey(lineInfo))
+                _calculatedPossibilities[lineInfo] = GetPossibilities(info, line.Count).ToList();
 
             // 현재 경우에 가능한 경우만 거름(Merge해서 CRASH가 생기지 않는 경우)
             IEnumerable<List<Cell>> possibilities
-                = _calculatedPossibilities[(index, direction)].Where(possibility =>
+                = _calculatedPossibilities[lineInfo].Where(possibility =>
                     !MergeLine(line, possibility).Contains(Cell.CRASH)).ToList();
 
             // 걸러진 경우는 다음에도 무조건 걸러지므로(Board에서 None->BLOCK/BLANK->CRASH순서로만 변함) 걸러진 목록으로 업데이트
-            _calculatedPossibilities[(index, direction)] = possibilities.ToList();
+            _calculatedPossibilities[lineInfo] = possibilities.ToList();
 
             // 현재 가능한 경우를 모두 병합함(Crash는 변화시키지 않기 위해 None으로 변경) 
             List<Cell> mergedPossibility
@@ -85,7 +84,7 @@ namespace NonogramSolverLib
             List<Cell> mergedLine = MergeLine(line, mergedPossibility);
 
             // 적용된 라인으로 세팅
-            Board.SetLine(index, direction, mergedLine);
+            Board.SetLine(lineInfo, mergedLine);
 
             // 메모리 확보
             GC.Collect();
@@ -100,7 +99,7 @@ namespace NonogramSolverLib
         public int GetCachedLength()
         {
             return _calculatedPossibilities.Values
-                .Sum(calculatedPossibility => calculatedPossibility.Count * calculatedPossibility[0].Count);
+                .Sum(calculatedPossibility => calculatedPossibility.Count);
         }
 
         /// <summary>
@@ -117,17 +116,17 @@ namespace NonogramSolverLib
             var sum = 0;
             for (var i = 0; i < Board.Height; i++)
                 sum += Board
-                    .GetLine(i, Direction.HORIZONTAL)
+                    .GetLine(new LineInfo(i, Direction.HORIZONTAL))
                     .Count(cell => cell is Cell.BLANK or Cell.BLOCK);
 
             return sum;
         }
 
-        public List<int> GetInfo(int index, Direction direction)
+        public List<int> GetInfo(LineInfo lineInfo)
         {
-            return direction == Direction.VERTICAL
-                ? _verticalInfos[index]
-                : _horizontalInfos[index];
+            return lineInfo.Direction == Direction.VERTICAL
+                ? _verticalInfos[lineInfo.Index]
+                : _horizontalInfos[lineInfo.Index];
         }
 
         private static List<Cell> MergeLine(List<Cell> a, List<Cell> b)
@@ -137,15 +136,22 @@ namespace NonogramSolverLib
             return Enumerable.Range(0, a.Count).Select(i => a[i] | b[i]).ToList();
         }
 
-        public static uint GetNumberOfCases(List<int> info, int lineLength)
+        public int GetNumberOfCases(LineInfo info, bool printState = false)
+        {
+            if (printState) Console.Out.Write($"\r{info.Index} {info.Direction.ToString()}");
+
+            return GetNumberOfCases(GetInfo(info), info.Direction == Direction.VERTICAL ? Board.Height : Board.Width);
+        }
+
+        private static int GetNumberOfCases(List<int> info, int lineLength)
         {
             switch (info.Count)
             {
                 case 0:
-                    return (uint)lineLength;
+                    return lineLength;
 
                 case 1:
-                    return (uint)(lineLength - info[0] + 1);
+                    return lineLength - info[0] + 1;
 
                 default:
                 {
@@ -155,11 +161,9 @@ namespace NonogramSolverLib
                     List<int> otherCell = info.GetRange(1, info.Count - 1);
                     int otherLengthSum = otherCell.Sum() + (info.Count - 2);
 
-                    uint sum = 0;
+                    var sum = 0;
                     for (int startPos = remainingLength + 1; startPos <= lineLength - otherLengthSum; startPos++)
-                    {
                         sum += GetNumberOfCases(otherCell, lineLength - startPos);
-                    }
 
                     return sum;
                 }
