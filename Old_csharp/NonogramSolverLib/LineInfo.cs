@@ -1,4 +1,4 @@
-namespace NonogramSolverLib
+amespace NonogramSolverLib
 {
     public record LineInfo(int Index, Direction Direction);
 }

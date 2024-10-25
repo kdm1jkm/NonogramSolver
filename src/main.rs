@@ -1,25 +1,27 @@
-use nonogram_solver::board::{self, Board};
+use std::env;
+use std::time::Instant;
+
+mod console;
 
 fn main() {
-    const BOARD_WIDTH: usize = 10;
-    const BOARD_HEIGHT: usize = 10;
-    const INITIAL_VALUE: usize = 0;
+    /*
+    let start = Instant::now();
 
-    let board_size = board::Vec2::new(BOARD_WIDTH, BOARD_HEIGHT);
-    let board = board::default_board(board_size, INITIAL_VALUE);
+    let args: Vec<String> = env::args().collect();
+    let mut app = SolverApp::new(&args);
+    app.unwrap().start();
 
-    let row_line = board.get_row_line(0);
-    let mut iter = row_line;
-    while let Some(value) = iter.next() {
-        print!("{:?} ", value);
-    }
-    println!();
-    println!();
+    let duration = start.elapsed();
 
-    for row in 0..board.get_row() {
-        for col in 0..board.get_column() {
-            print!("{:?} ", board.get_value(board::Vec2::new(col, row)));
-        }
-        println!();
-    }
+    println!(" {:?}", duration);
+
+    // Rust에는 C#의 Console.ReadKey()와 정확히 일치하는 기능이 없습니다.
+    // 대신, 사용자 입력을 기다리는 간단한 방법을 사용합니다.
+    let mut input = String::new();
+    std::io::stdin()
+        .read_line(&mut input)
+        .expect("입력을 읽는 데 실패했습니다.");
+    */
+
+    println!("Hello, World!");
 }
