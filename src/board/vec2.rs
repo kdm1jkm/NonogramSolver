@@ -60,6 +60,15 @@ where
     }
 }
 
+impl<T> From<(T, T)> for Vec2<T>
+where
+    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy + Clone,
+{
+    fn from(value: (T, T)) -> Self {
+        Self::new(value.0, value.1)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
