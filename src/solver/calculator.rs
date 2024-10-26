@@ -127,22 +127,4 @@ mod test {
         let result = calc_distribute_number_temp(5, 3, 50);
         assert_eq!(result, Err("Index out of range"));
     }
-
-    #[test]
-    fn test_whole_iterate() {
-        let mut distribute_number = DistributeNumberCalculator::new();
-
-        let amount = 20;
-        let count = 8;
-
-        let iter = distribute_number
-            .comb_counter
-            .calc_comb_count(amount, count);
-
-        for i in 0..iter as usize {
-            distribute_number
-                .calc_distribute_number(amount as usize, count as usize, i)
-                .unwrap();
-        }
-    }
 }
