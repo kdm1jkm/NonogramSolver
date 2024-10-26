@@ -18,11 +18,7 @@ impl DistributeNumberCalculator {
     ) -> Result<Vec<usize>, &'static str> {
         let mut result = vec![0; count];
 
-        if self
-            .comb_counter
-            .calc_comb_count(amount as i32, count as i32)
-            <= index as i32
-        {
+        if self.comb_counter.calc_comb_count(amount, count) <= index {
             return Err("Index out of range");
         }
         let mut left = amount;
@@ -34,12 +30,10 @@ impl DistributeNumberCalculator {
                 let my_use = j;
                 let their_use = left - j;
 
-                let comb_count = self
-                    .comb_counter
-                    .calc_comb_count(their_use as i32, count as i32 - i as i32 - 1);
+                let comb_count = self.comb_counter.calc_comb_count(their_use, count - i - 1);
                 counted_index += comb_count;
 
-                if counted_index > index as i32 {
+                if counted_index > index {
                     result[i] = my_use;
                     left -= my_use;
                     counted_index -= comb_count;
@@ -139,19 +133,16 @@ mod test {
         let mut distribute_number = DistributeNumberCalculator::new();
 
         let amount = 20;
-        let count = 5;
+        let count = 8;
 
-        let count = distribute_number
+        let iter = distribute_number
             .comb_counter
             .calc_comb_count(amount, count);
 
-        let start_time = std::time::Instant::now();
-        for i in 0..count as usize {
+        for i in 0..iter as usize {
             distribute_number
                 .calc_distribute_number(amount as usize, count as usize, i)
                 .unwrap();
         }
-        let duration = start_time.elapsed();
-        println!("Time taken: {:?}", duration);
     }
 }

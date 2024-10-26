@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
+type T = usize;
 pub struct CombCounter {
-    cache: HashMap<(i32, i32), i32>,
+    cache: HashMap<(T, usize), T>,
 }
 
 impl CombCounter {
@@ -11,7 +12,7 @@ impl CombCounter {
         }
     }
 
-    pub fn calc_comb_count(&mut self, amount: i32, count: i32) -> i32 {
+    pub fn calc_comb_count(&mut self, amount: T, count: usize) -> T {
         if let Some(&result) = self.cache.get(&(amount, count)) {
             return result;
         }
@@ -25,6 +26,7 @@ impl CombCounter {
             1 => 1,
             2 => amount + 1,
             3.. => (0..=amount)
+                .rev()
                 .map(|x| self.calc_comb_count(x, count - 1))
                 .sum(),
         };
@@ -41,7 +43,7 @@ mod test {
     #[test]
     fn test_calc_comb_count() {
         let mut comb_counter = CombCounter::new();
-        let result = comb_counter.calc_comb_count(5, 3);
-        assert_eq!(result, 21);
+        let result = comb_counter.calc_comb_count(20, 5);
+        assert_eq!(result, 10626);
     }
 }
