@@ -1,10 +1,12 @@
-mod cell;
+pub mod cell;
 use bit_set::BitSet;
 use calculator::DistributeNumberCalculator;
-use cell::Cell;
+pub use cell::Cell;
 
 use crate::board::{Board, BoardVec, Vec2};
 pub mod calculator;
+
+use std::fmt::Write;
 
 impl DistributeNumberCalculator {
     fn calc_distribute_number_line_hint(
@@ -229,6 +231,95 @@ impl<T: Board<Item = Cell>> Solver<T> {
             .zip(iter_mut_update)
             .filter(|(new, _old)| **new != Cell::Crash)
             .for_each(|(new, old)| *old = *old | *new);
+
+        Ok(())
+    }
+
+    pub fn to_string(&self) -> String {
+        let mut result = String::new();
+
+        // 행 힌트의 최대 길이를 구합니다.
+        let max_row_hint_len = self
+            .row_solver_info
+            .given_hint
+            .iter()
+            .map(|hint| hint.len())
+            .max()
+            .unwrap_or(0);
+
+        // 열 힌트의 최대 길이를 구합니다.
+        let max_col_hint_len = self
+            .column_solver_info
+            .given_hint
+            .iter()
+            .map(|hint| hint.len())
+            .max()
+            .unwrap_or(0);
+
+        // 열 힌트를 전치하여 보드 위에 출력합니다.
+        for i in 0..max_col_hint_len {
+            write!(result, "{:<width$}", " ", width = max_row_hint_len * 4).unwrap(); // 행 힌트 공간
+            for col_hint in &self.column_solver_info.given_hint {
+                if i < max_col_hint_len - col_hint.len() {
+                    write!(result, "    ").unwrap(); // 빈 공간
+                } else {
+                    let hint_index = i - (max_col_hint_len - col_hint.len());
+                    write!(result, "{:<4}", col_hint[hint_index]).unwrap(); // 고정된 너비 사용
+                }
+            }
+            writeln!(result, "").unwrap();
+        }
+
+        writeln!(result, "").unwrap(); // 빈 줄 추가
+
+        // 각 행에 대해 행 힌트와 보드 상태를 출력합니다.
+        for (row_index, row_hint) in self.row_solver_info.given_hint.iter().enumerate() {
+            let hint_str = row_hint
+                .iter()
+                .map(|h| h.to_string())
+                .collect::<Vec<String>>()
+                .join(" ");
+            write!(result, "{:<width$}", hint_str, width = max_row_hint_len * 4).unwrap(); // 힌트를 왼쪽 정렬하여 출력
+
+            // 첫 번째 줄 출력
+            for col_index in 0..self.board.size().column {
+                let cell = self.board.value(Vec2 {
+                    row: row_index,
+                    column: col_index,
+                });
+                write!(result, "{}{}", cell, cell).unwrap(); // Display 구현 사용
+            }
+            writeln!(result, "").unwrap();
+
+            // 두 번째 줄 출력
+            write!(result, "{:<width$}", "", width = max_row_hint_len * 4).unwrap(); // 두 번째 줄의 행 힌트 공간
+            for col_index in 0..self.board.size().column {
+                let cell = self.board.value(Vec2 {
+                    row: row_index,
+                    column: col_index,
+                });
+                write!(result, "{}{}", cell, cell).unwrap(); // Display 구현 사용
+            }
+            writeln!(result, "").unwrap();
+        }
+
+        result
+    }
+
+    pub fn solve(&mut self) -> Result<(), SolverError> {
+        for row in 0..self.board.size().row {
+            self.solve_line(Line {
+                direction: LineDirection::Row,
+                index: row,
+            })?;
+        }
+
+        for col in 0..self.board.size().column {
+            self.solve_line(Line {
+                direction: LineDirection::Column,
+                index: col,
+            })?;
+        }
 
         Ok(())
     }

@@ -1,6 +1,9 @@
 use std::env;
 use std::time::Instant;
 
+use nonogram_solver::board::{BoardVec, Vec2};
+use nonogram_solver::solver::{Cell, Solver};
+
 mod console;
 
 fn main() {
@@ -22,6 +25,41 @@ fn main() {
         .read_line(&mut input)
         .expect("입력을 읽는 데 실패했습니다.");
     */
+    let mut solver: Solver<BoardVec<Cell>> = Solver::new(
+        Vec2 {
+            row: 10,
+            column: 10,
+        },
+        vec![
+            vec![10],
+            vec![10],
+            vec![2],
+            vec![2],
+            vec![10],
+            vec![10],
+            vec![2],
+            vec![2],
+            vec![10],
+            vec![10],
+        ],
+        vec![
+            vec![2, 2, 2],
+            vec![2, 3, 2],
+            vec![2, 3, 3],
+            vec![2, 2, 3],
+            vec![2, 2, 2],
+            vec![3, 2, 2],
+            vec![3, 3, 2],
+            vec![2, 3, 2],
+            vec![2, 2, 2],
+            vec![2, 2, 2],
+        ],
+    )
+    .unwrap();
 
-    println!("Hello, World!");
+    println!("{}", solver.to_string());
+
+    solver.solve();
+
+    println!("{}", solver.to_string());
 }

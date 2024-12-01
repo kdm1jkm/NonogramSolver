@@ -28,10 +28,10 @@ impl Display for Cell {
             f,
             "{}",
             match self {
-                Cell::Block => "O",
-                Cell::Blank => " ",
-                Cell::Crash => "C",
-                Cell::None => "?",
+                Cell::Block => "██",
+                Cell::Blank => "  ",
+                Cell::Crash => "CC",
+                Cell::None => "??",
             }
         )
     }
