@@ -1,11 +1,10 @@
+pub mod calculator;
 pub mod cell;
+
+use crate::board::{vec2::Vec2, Board};
 use bit_set::BitSet;
 use calculator::DistributeNumberCalculator;
-pub use cell::Cell;
-
-use crate::board::{Board, BoardVec, Vec2};
-pub mod calculator;
-
+use cell::Cell;
 use std::fmt::Write;
 
 impl DistributeNumberCalculator {
@@ -48,8 +47,7 @@ impl DistributeNumberCalculator {
     }
 }
 
-struct SolvingInfo<T: Board<Item = Cell>> {
-    count_board: T,
+struct SolvingInfo {
     possibility_count: Vec<usize>,
     possibilities: Vec<BitSet>,
     given_hint: Vec<Vec<usize>>,
@@ -71,17 +69,16 @@ pub enum SolverError {
     InvalidHint(String),
 }
 
-pub struct Solver<T: Board<Item = Cell>> {
-    board: T,
-    row_solver_info: SolvingInfo<T>,
-    column_solver_info: SolvingInfo<T>,
+pub struct Solver {
+    board: Board<Cell>,
+    row_solver_info: SolvingInfo,
+    column_solver_info: SolvingInfo,
     cache: DistributeNumberCalculator,
 }
 
-impl<T: Board<Item = Cell>> Default for SolvingInfo<T> {
+impl Default for SolvingInfo {
     fn default() -> Self {
         SolvingInfo {
-            count_board: T::new(Vec2 { row: 0, column: 0 }, Cell::None),
             possibility_count: Vec::new(),
             possibilities: Vec::new(),
             given_hint: Vec::new(),
@@ -89,7 +86,7 @@ impl<T: Board<Item = Cell>> Default for SolvingInfo<T> {
     }
 }
 
-impl<T: Board<Item = Cell>> Solver<T> {
+impl Solver {
     fn validate_hints(size: usize, hints: &[Vec<usize>], is_row: bool) -> Result<(), SolverError> {
         let dimension = if is_row { "row" } else { "column" };
 
@@ -127,24 +124,19 @@ impl<T: Board<Item = Cell>> Solver<T> {
         Self::validate_hints(size.column, &column_hint, false)?;
 
         let mut solver = Self {
-            board: T::new(size, Cell::None),
+            board: Board::new(size, Cell::None),
             row_solver_info: SolvingInfo::default(), // 임시값
             column_solver_info: SolvingInfo::default(), // 임시값
             cache: DistributeNumberCalculator::new(),
         };
 
-        solver.row_solver_info = solver.create_solving_info(size.column, row_hint, size);
-        solver.column_solver_info = solver.create_solving_info(size.row, column_hint, size);
+        solver.row_solver_info = solver.create_solving_info(size.column, row_hint);
+        solver.column_solver_info = solver.create_solving_info(size.row, column_hint);
 
         Ok(solver)
     }
 
-    fn create_solving_info(
-        &mut self,
-        size: usize,
-        hints: Vec<Vec<usize>>,
-        board_size: Vec2,
-    ) -> SolvingInfo<T> {
+    fn create_solving_info(&mut self, size: usize, hints: Vec<Vec<usize>>) -> SolvingInfo {
         let mut possibility_count = Vec::with_capacity(size);
         let mut possibilities = Vec::with_capacity(size);
 
@@ -161,7 +153,6 @@ impl<T: Board<Item = Cell>> Solver<T> {
         }
 
         SolvingInfo {
-            count_board: T::new(board_size, Cell::None),
             possibility_count,
             possibilities,
             given_hint: hints,
@@ -366,8 +357,7 @@ mod test {
 
     #[test]
     fn test_solve_line() {
-        use crate::board::BoardVec;
-        let mut solver: Solver<BoardVec<Cell>> = Solver::new(
+        let mut solver: Solver = Solver::new(
             Vec2 {
                 row: 10,
                 column: 10,

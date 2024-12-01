@@ -1,11 +1,4 @@
-use std::env;
-use std::time::Instant;
-
-use console::create_solver_from_file;
-use nonogram_solver::board::{BoardVec, Vec2};
-use nonogram_solver::solver::{Cell, Solver};
-
-mod console;
+use nonogram_solver::console::create_solver_from_file;
 
 fn main() {
     let mut solver = create_solver_from_file("./sample/data3.txt").unwrap();

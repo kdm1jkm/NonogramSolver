@@ -1,12 +1,10 @@
-use nonogram_solver::board::{BoardVec, Vec2};
-use nonogram_solver::solver::{Cell, Solver};
+use crate::board::vec2::Vec2;
+use crate::solver::Solver;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
-pub fn create_solver_from_file<P: AsRef<Path>>(
-    file_path: P,
-) -> Result<Solver<BoardVec<Cell>>, String> {
+pub fn create_solver_from_file<P: AsRef<Path>>(file_path: P) -> Result<Solver, String> {
     let file = File::open(file_path).map_err(|_| "Failed to open file.".to_string())?;
     let mut lines = io::BufReader::new(file).lines();
 
