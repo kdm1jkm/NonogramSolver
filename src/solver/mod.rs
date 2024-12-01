@@ -5,11 +5,7 @@ use crate::board::{vec2::Vec2, Board};
 use bit_set::BitSet;
 use calculator::DistributeNumberCalculator;
 use cell::Cell;
-use std::{
-    cmp::Reverse,
-    collections::{BinaryHeap, HashSet},
-    fmt::Write,
-};
+use std::{collections::HashSet, fmt::Write};
 
 impl DistributeNumberCalculator {
     fn calc_distribute_number_line_hint(
@@ -483,7 +479,7 @@ mod test {
         )
         .unwrap();
 
-        solver.solve(0);
+        solver.solve(0).unwrap();
 
         let expected_board = vec![
             vec![

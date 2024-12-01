@@ -87,4 +87,9 @@ mod test {
     fn test_mul() {
         assert_eq!(Vec2::new(1, 2) * 3, Vec2::new(3, 6));
     }
+
+    #[test]
+    fn test_from() {
+        assert_eq!(Vec2::from((1, 2)), Vec2::new(1, 2));
+    }
 }
