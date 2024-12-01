@@ -1,7 +1,7 @@
 mod comb_counter;
 
 pub struct DistributeNumberCalculator {
-    comb_counter: comb_counter::CombCounter,
+    pub comb_counter: comb_counter::CombCounter,
 }
 
 impl DistributeNumberCalculator {
@@ -114,6 +114,12 @@ mod test {
     fn test_calc_distribute_number_9() {
         let result = calc_distribute_number_temp(6, 4, 4);
         assert_eq!(result, Ok(vec![0, 0, 4, 2]));
+    }
+
+    #[test]
+    fn test_calc_distribute_number_10() {
+        let result = calc_distribute_number_temp(0, 4, 0);
+        assert_eq!(result, Ok(vec![0, 0, 0, 0]));
     }
 
     #[test]

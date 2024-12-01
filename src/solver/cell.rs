@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Cell {
     Block = 0b10,
@@ -17,6 +19,21 @@ impl std::ops::BitOr for Cell {
             0b00 => Cell::None,
             _ => unreachable!(),
         }
+    }
+}
+
+impl Display for Cell {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Cell::Block => "O",
+                Cell::Blank => " ",
+                Cell::Crash => "C",
+                Cell::None => "?",
+            }
+        )
     }
 }
 

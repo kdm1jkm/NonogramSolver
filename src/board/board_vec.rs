@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use super::{Board, Vec2};
 
 pub struct BoardVec<T> {
@@ -11,7 +13,7 @@ impl<T> BoardVec<T> {
     }
 }
 
-impl<T: Copy> Board for BoardVec<T> {
+impl<T: Copy + Display> Board for BoardVec<T> {
     type Item = T;
 
     fn new(size: Vec2, init_value: T) -> BoardVec<T> {
@@ -33,26 +35,44 @@ impl<T: Copy> Board for BoardVec<T> {
         self.size
     }
 
-    fn row(&self, row: usize) -> impl Iterator<Item = &Self::Item> {
+    fn iter_row(&self, row: usize) -> impl Iterator<Item = &Self::Item> {
         self.values
             .iter()
             .skip(row * self.size.column)
             .take(self.size.column)
     }
 
-    fn row_mut(&mut self, row: usize) -> impl Iterator<Item = &mut Self::Item> {
+    fn iter_row_mut(&mut self, row: usize) -> impl Iterator<Item = &mut Self::Item> {
         self.values
             .iter_mut()
             .skip(row * self.size.column)
             .take(self.size.column)
     }
 
-    fn column(&self, col: usize) -> impl Iterator<Item = &Self::Item> {
+    fn iter_column(&self, col: usize) -> impl Iterator<Item = &Self::Item> {
         self.values.iter().skip(col).step_by(self.size.column)
     }
 
-    fn column_mut(&mut self, col: usize) -> impl Iterator<Item = &mut Self::Item> {
+    fn iter_column_mut(&mut self, col: usize) -> impl Iterator<Item = &mut Self::Item> {
         self.values.iter_mut().skip(col).step_by(self.size.column)
+    }
+
+    fn iter_all(&self) -> impl Iterator<Item = &Self::Item> {
+        self.values.iter()
+    }
+
+    fn to_string(&self) -> String {
+        let capacity = self.size.row * (self.size.column * 4 + 1);
+        let mut result = String::with_capacity(capacity);
+        for row in 0..self.size.row {
+            for col in 0..self.size.column {
+                use std::fmt::Write;
+                let value = self.value(Vec2 { row, column: col });
+                write!(result, "{} ", value).expect("writing to string should never fail");
+            }
+            result.push('\n');
+        }
+        result
     }
 }
 
@@ -84,7 +104,8 @@ mod tests {
         *board.value_mut(Vec2::new(1, 0)) = 1;
         *board.value_mut(Vec2::new(1, 1)) = 2;
         *board.value_mut(Vec2::new(1, 2)) = 3;
-        let row_line: Vec<usize> = board.row(1).map(|&v| v).collect();
+        let row_line: Vec<usize> = board.iter_row(1).map(|&v| v).collect();
+        println!("{}", board.to_string());
         assert_eq!(row_line, vec![1, 2, 3]);
     }
 }
