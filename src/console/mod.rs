@@ -1,8 +1,10 @@
 use crate::board::vec2::Vec2;
-use crate::solver::Solver;
+use crate::solver::{Solver, SolverError};
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
+use std::thread;
+use std::time::Duration;
 
 pub fn create_solver_from_file<P: AsRef<Path>>(file_path: P) -> Result<Solver, String> {
     let file = File::open(file_path).map_err(|_| "Failed to open file.".to_string())?;
@@ -71,5 +73,57 @@ pub fn create_solver_from_file<P: AsRef<Path>>(file_path: P) -> Result<Solver, S
         row_hints,
         column_hints,
     )
-    .map_err(|_| "Failed to create Solver.".to_string())
+    .map_err(|e| {
+        format!(
+            "Failed to create Solver: {}",
+            match e {
+                SolverError::InvalidSize(s) => format!("Invalid size: {}", s),
+                SolverError::InvalidHint(s) => format!("Invalid hint: {}", s),
+            }
+        )
+    })
+}
+
+impl Solver {
+    pub fn solve(&mut self, interval_ms: u64) -> Result<(), SolverError> {
+        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+        while !self.is_solved() {
+            print!("{esc}[H", esc = 27 as char);
+            let line = self.get_next_line();
+            println!("{}", self.to_string_board());
+            if let Some(line) = line {
+                print!(
+                    "\n                                                        \r Current line: {} {}",
+                    match line.direction {
+                        crate::solver::LineDirection::Row => "row",
+                        crate::solver::LineDirection::Column => "column",
+                    },
+                    line.index
+                );
+                let changed = self.solve_one_step(|a, b| {
+                    if a % 1000 == 0 {
+                        print!(
+                            "                                                        \r Current line: {} {} ({:.2}%)",
+                            match line.direction {
+                                crate::solver::LineDirection::Row => "row",
+                                crate::solver::LineDirection::Column => "column",
+                            },
+                            line.index,
+                            (a as f64 / b as f64) * 100.0,
+                        );
+                    }
+                })?;
+                if changed > 0 {
+                    thread::sleep(Duration::from_millis(interval_ms));
+                }
+            } else {
+                break;
+            }
+        }
+
+        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+        println!("Solved!");
+        println!("{}", self.to_string_board());
+        Ok(())
+    }
 }

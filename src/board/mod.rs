@@ -71,7 +71,7 @@ impl<T> Board<T> {
             for col in 0..self.size.column {
                 use std::fmt::Write;
                 let value = self.value(Vec2 { row, column: col });
-                write!(result, "{} ", value).expect("writing to string should never fail");
+                write!(result, "{}", value).expect("writing to string should never fail");
             }
             result.push('\n');
         }
