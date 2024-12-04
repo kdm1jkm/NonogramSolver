@@ -14,7 +14,10 @@ impl<T> Board<T> {
         position.row * self.size.column + position.column
     }
 
-    pub fn new(size: Vec2, init_value: T) -> Board<T> where T: Copy {
+    pub fn new(size: Vec2, init_value: T) -> Board<T>
+    where
+        T: Copy,
+    {
         let values = vec![init_value; size.row * size.column];
         Board { values, size }
     }
@@ -58,7 +61,10 @@ impl<T> Board<T> {
         self.values.iter()
     }
 
-    pub fn to_string(&self) -> String where T: Display {
+    pub fn to_string(&self) -> String
+    where
+        T: Display,
+    {
         let capacity = self.size.row * (self.size.column * 4 + 1);
         let mut result = String::with_capacity(capacity);
         for row in 0..self.size.row {

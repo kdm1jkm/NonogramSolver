@@ -1,10 +1,11 @@
 mod comb_counter;
+use super::cell::Cell;
 
-pub struct DistributeNumberCalculator {
+pub struct NumberDistributionCalculator {
     pub comb_counter: comb_counter::CombCounter,
 }
 
-impl DistributeNumberCalculator {
+impl NumberDistributionCalculator {
     pub fn new() -> Self {
         Self {
             comb_counter: comb_counter::CombCounter::new(),
@@ -14,7 +15,7 @@ impl DistributeNumberCalculator {
         &mut self,
         amount: usize,
         count: usize,
-        index: usize
+        index: usize,
     ) -> Result<Vec<usize>, &'static str> {
         let mut result = vec![0; count];
 
@@ -47,6 +48,43 @@ impl DistributeNumberCalculator {
 
         Ok(result)
     }
+
+    pub fn calc_distribute_count_line_hint(
+        &mut self,
+        hint_numbers: &[usize],
+        length: usize,
+    ) -> usize {
+        self.comb_counter.calc_comb_count(
+            length + 1 - hint_numbers.iter().sum::<usize>() - hint_numbers.len(),
+            hint_numbers.len() + 1,
+        )
+    }
+
+    pub fn calc_distribute_number_line_hint(
+        &mut self,
+        hint_numbers: &[usize],
+        length: usize,
+        index: usize,
+        result: &mut Vec<Cell>,
+    ) -> Result<(), &'static str> {
+        result.clear();
+        let distribute = self.calc_distribute_number(
+            length + 1 - hint_numbers.iter().sum::<usize>() - hint_numbers.len(),
+            hint_numbers.len() + 1,
+            index,
+        )?;
+
+        for i in 0..hint_numbers.len() {
+            result.append(&mut vec![Cell::Blank; distribute[i]]);
+            result.append(&mut vec![Cell::Block; hint_numbers[i]]);
+            if i < hint_numbers.len() - 1 {
+                result.push(Cell::Blank);
+            }
+        }
+        result.append(&mut vec![Cell::Blank; distribute[distribute.len() - 1]]);
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -56,9 +94,9 @@ mod test {
     pub fn calc_distribute_number_temp(
         amount: usize,
         count: usize,
-        index: usize
+        index: usize,
     ) -> Result<Vec<usize>, &'static str> {
-        let mut distribute_number = DistributeNumberCalculator::new();
+        let mut distribute_number = NumberDistributionCalculator::new();
         distribute_number.calc_distribute_number(amount, count, index)
     }
 

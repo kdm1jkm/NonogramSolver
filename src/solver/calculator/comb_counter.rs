@@ -25,11 +25,10 @@ impl CombCounter {
             ..1 => unreachable!(),
             1 => 1,
             2 => amount + 1,
-            3.. =>
-                (0..=amount)
-                    .rev()
-                    .map(|x| self.calc_comb_count(x, count - 1))
-                    .sum(),
+            3.. => (0..=amount)
+                .rev()
+                .map(|x| self.calc_comb_count(x, count - 1))
+                .sum(),
         };
 
         self.cache.insert((amount, count), result);

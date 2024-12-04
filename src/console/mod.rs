@@ -165,7 +165,7 @@ impl ConsoleSolverDisplay {
                         match line.direction() {
                             LineDirection::Row => "R",
                             LineDirection::Column => "C",
-                        },
+                        }
                     )
                 });
                 if solving_state.line_waiting.len() > 10 {
@@ -189,8 +189,8 @@ impl ConsoleSolverDisplay {
                 }
 
                 let progress_length = 40;
-                let progress_count =
-                    (progress.0 as f64 / progress.1 as f64 * progress_length as f64) as usize;
+                let progress_count = (((progress.0 as f64) / (progress.1 as f64))
+                    * (progress_length as f64)) as usize;
 
                 let guard = progress_mutex.lock().unwrap();
                 print!("{esc}[K", esc = 27 as char);
