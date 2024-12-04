@@ -1,6 +1,7 @@
 pub mod board_formatter;
 pub mod calculator;
 pub mod cell;
+pub mod display_handler;
 pub mod line_processor;
 pub mod solver_display;
 pub mod solving_strategy;
@@ -9,6 +10,7 @@ use crate::board::{vec2::Vec2, Board};
 use bit_set::BitSet;
 use board_formatter::BoardFormatter;
 use cell::Cell;
+use display_handler::DisplayHandler;
 use line_processor::LineProcessor;
 use solver_display::{SolverDisplay, SolverState, SolvingState};
 use solving_strategy::SolvingStrategy;
@@ -68,6 +70,12 @@ pub struct Solver {
     board_formatter: BoardFormatter,
     display: Option<Rc<RefCell<Box<dyn SolverDisplay>>>>,
     line_changed: HashSet<Line>,
+}
+
+impl DisplayHandler for Solver {
+    fn get_display(&self) -> Option<Rc<RefCell<Box<dyn SolverDisplay>>>> {
+        self.display.as_ref().map(|d| Rc::clone(d))
+    }
 }
 
 impl Solver {
@@ -203,21 +211,15 @@ impl Solver {
 
     pub fn solve(&mut self) -> Result<(), SolverError> {
         while let Some(line) = self.next_line_pop() {
-            if let Some(display) = &self.display {
-                display
-                    .borrow_mut()
-                    .change_state(SolverState::Solving(SolvingState {
-                        board: Arc::clone(&self.board),
-                        line,
-                        line_waiting: self.line_order(),
-                    }));
-            }
+            self.change_state(SolverState::Solving(SolvingState {
+                board: Arc::clone(&self.board),
+                line,
+                line_waiting: self.line_order(),
+            }));
             self.solve_line(line)?;
         }
 
-        if let Some(display) = &self.display {
-            display.borrow_mut().change_state(SolverState::Idle);
-        }
+        self.change_state(SolverState::Idle);
         Ok(())
     }
 

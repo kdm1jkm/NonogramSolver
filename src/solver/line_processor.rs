@@ -39,10 +39,7 @@ impl LineProcessor {
             .filter(|(_, (_, &new_cell))| new_cell != Cell::Unknown)
             .filter(|(_, (board_cell, &new_cell))| **board_cell != new_cell)
             .for_each(|(index, (board_cell, &new_cell))| {
-                changed_lines.insert(match line.direction() {
-                    LineDirection::Row => index,
-                    LineDirection::Column => index,
-                });
+                changed_lines.insert(index);
                 *board_cell = new_cell;
             });
 
