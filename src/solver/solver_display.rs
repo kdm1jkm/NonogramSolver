@@ -1,7 +1,7 @@
 use crate::board::Board;
-use std::sync::{Arc, RwLock};
+use std::sync::{ Arc, RwLock };
 
-use super::{cell::Cell, Line};
+use super::{ cell::Cell, Line };
 
 #[derive(Clone)]
 pub enum SolverState {

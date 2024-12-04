@@ -24,16 +24,12 @@ impl std::ops::BitOr for Cell {
 
 impl Display for Cell {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Cell::Block => "██",
-                Cell::Blank => "  ",
-                Cell::Crash => "CC",
-                Cell::Unknown => "??",
-            }
-        )
+        write!(f, "{}", match self {
+            Cell::Block => "██",
+            Cell::Blank => "  ",
+            Cell::Crash => "CC",
+            Cell::Unknown => "??",
+        })
     }
 }
 

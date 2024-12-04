@@ -1,27 +1,19 @@
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Vec2<T = usize>
-where
-    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy + Clone,
-{
+    where T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy + Clone {
     pub row: T,
     pub column: T,
 }
 
-impl<T> Vec2<T>
-where
-    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy + Clone,
-{
+impl<T> Vec2<T> where T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy + Clone {
     pub fn new(row: T, column: T) -> Self {
         Self { row, column }
     }
 }
 
-use std::ops::{Add, Mul, Sub};
+use std::ops::{ Add, Mul, Sub };
 
-impl<T> Add for Vec2<T>
-where
-    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy + Clone,
-{
+impl<T> Add for Vec2<T> where T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy + Clone {
     type Output = Self;
 
     fn add(self, other: Self) -> Self {
@@ -32,10 +24,7 @@ where
     }
 }
 
-impl<T> Sub for Vec2<T>
-where
-    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy + Clone,
-{
+impl<T> Sub for Vec2<T> where T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy + Clone {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self {
@@ -46,9 +35,9 @@ where
     }
 }
 
-impl<T> Mul<T> for Vec2<T>
-where
-    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy + Clone,
+impl<T> Mul<T>
+    for Vec2<T>
+    where T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy + Clone
 {
     type Output = Self;
 
@@ -60,9 +49,9 @@ where
     }
 }
 
-impl<T> From<(T, T)> for Vec2<T>
-where
-    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy + Clone,
+impl<T> From<(T, T)>
+    for Vec2<T>
+    where T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Copy + Clone
 {
     fn from(value: (T, T)) -> Self {
         Self::new(value.0, value.1)

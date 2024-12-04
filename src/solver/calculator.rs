@@ -14,7 +14,7 @@ impl DistributeNumberCalculator {
         &mut self,
         amount: usize,
         count: usize,
-        index: usize,
+        index: usize
     ) -> Result<Vec<usize>, &'static str> {
         let mut result = vec![0; count];
 
@@ -25,7 +25,7 @@ impl DistributeNumberCalculator {
 
         let mut counted_index = 0;
 
-        for i in 0..(count - 2) {
+        for i in 0..count - 2 {
             for j in 0..=left {
                 let my_use = j;
                 let their_use = left - j;
@@ -42,8 +42,8 @@ impl DistributeNumberCalculator {
             }
         }
 
-        result[count - 2] = index - counted_index as usize;
-        result[count - 1] = left - (index - counted_index as usize);
+        result[count - 2] = index - (counted_index as usize);
+        result[count - 1] = left - (index - (counted_index as usize));
 
         Ok(result)
     }
@@ -56,7 +56,7 @@ mod test {
     pub fn calc_distribute_number_temp(
         amount: usize,
         count: usize,
-        index: usize,
+        index: usize
     ) -> Result<Vec<usize>, &'static str> {
         let mut distribute_number = DistributeNumberCalculator::new();
         distribute_number.calc_distribute_number(amount, count, index)
