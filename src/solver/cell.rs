@@ -5,7 +5,7 @@ pub enum Cell {
     Block = 0b10,
     Blank = 0b01,
     Crash = 0b11,
-    None = 0b00,
+    Unknown = 0b00,
 }
 
 impl std::ops::BitOr for Cell {
@@ -16,7 +16,7 @@ impl std::ops::BitOr for Cell {
             0b10 => Cell::Block,
             0b01 => Cell::Blank,
             0b11 => Cell::Crash,
-            0b00 => Cell::None,
+            0b00 => Cell::Unknown,
             _ => unreachable!(),
         }
     }
@@ -31,7 +31,7 @@ impl Display for Cell {
                 Cell::Block => "██",
                 Cell::Blank => "  ",
                 Cell::Crash => "CC",
-                Cell::None => "??",
+                Cell::Unknown => "??",
             }
         )
     }
@@ -49,12 +49,12 @@ mod test {
 
     #[test]
     fn test_bitor_2() {
-        assert_eq!(Blank | None, Blank);
+        assert_eq!(Blank | Unknown, Blank);
     }
 
     #[test]
     fn test_bitor_3() {
-        assert_eq!(None | None, None);
+        assert_eq!(Unknown | Unknown, Unknown);
     }
 
     #[test]
@@ -69,6 +69,6 @@ mod test {
 
     #[test]
     fn test_bitor_6() {
-        assert_eq!(Crash | None, Crash);
+        assert_eq!(Crash | Unknown, Crash);
     }
 }

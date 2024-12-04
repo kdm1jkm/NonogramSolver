@@ -10,7 +10,10 @@ fn main() {
     }
     let input_filename = &args[1];
     let interval_ms: u64 = args[2].parse().expect("interval_ms는 숫자여야 합니다.");
-    let mut solver = create_solver_from_file(input_filename).unwrap();
+    let mut solver = create_solver_from_file(input_filename, interval_ms).unwrap();
 
-    solver.solve(interval_ms).unwrap();
+    solver.solve().unwrap();
+    let result = solver.to_string();
+    drop(solver);
+    println!("SOLVED\n{}", result);
 }

@@ -1,25 +1,27 @@
 pub mod calculator;
 pub mod cell;
+pub mod solver_display;
 
-use crate::board::{vec2::Vec2, Board};
+use crate::board::{ vec2::Vec2, Board };
 use bit_set::BitSet;
 use calculator::DistributeNumberCalculator;
 use cell::Cell;
-use std::{collections::HashSet, fmt::Write};
+use solver_display::{ SolverDisplay, SolverState, SolvingState };
+use std::{ collections::HashSet, sync::{ Arc, RwLock } };
 
 impl DistributeNumberCalculator {
     fn calc_distribute_number_line_hint(
         &mut self,
-        hint_numbers: &Vec<usize>,
+        hint_numbers: &[usize],
         length: usize,
         index: usize,
-    ) -> Result<Vec<Cell>, &'static str> {
-        let mut result = Vec::with_capacity(length);
-
+        result: &mut Vec<Cell>
+    ) -> Result<(), &'static str> {
+        result.clear();
         let distribute = self.calc_distribute_number(
             length + 1 - hint_numbers.iter().sum::<usize>() - hint_numbers.len(),
             hint_numbers.len() + 1,
-            index,
+            index
         )?;
 
         for i in 0..hint_numbers.len() {
@@ -32,23 +34,18 @@ impl DistributeNumberCalculator {
 
         result.append(&mut vec![Cell::Blank; distribute[distribute.len() - 1]]);
 
-        return Ok(result);
+        Ok(())
     }
 
-    fn calc_distribute_count_line_hint(
-        &mut self,
-        hint_numbers: &Vec<usize>,
-        length: usize,
-    ) -> usize {
+    fn calc_distribute_count_line_hint(&mut self, hint_numbers: &[usize], length: usize) -> usize {
         self.comb_counter.calc_comb_count(
             length + 1 - hint_numbers.iter().sum::<usize>() - hint_numbers.len(),
-            hint_numbers.len() + 1,
+            hint_numbers.len() + 1
         )
     }
 }
 
 struct SolvingInfo {
-    possibility_count: Vec<usize>,
     possibilities: Vec<BitSet>,
     given_hint: Vec<Vec<usize>>,
 }
@@ -61,8 +58,27 @@ pub enum LineDirection {
 
 #[derive(Clone, Copy, Hash, Eq, PartialEq)]
 pub struct Line {
-    pub direction: LineDirection,
-    pub index: usize,
+    packed: u32,
+}
+
+impl Line {
+    pub fn new(direction: LineDirection, index: usize) -> Self {
+        let dir_bit = match direction {
+            LineDirection::Row => 0,
+            LineDirection::Column => 1 << 31,
+        };
+        Self {
+            packed: dir_bit | (index as u32),
+        }
+    }
+
+    pub fn direction(&self) -> LineDirection {
+        if (self.packed & (1 << 31)) == 0 { LineDirection::Row } else { LineDirection::Column }
+    }
+
+    pub fn index(&self) -> usize {
+        (self.packed & !(1 << 31)) as usize
+    }
 }
 
 #[derive(Debug)]
@@ -72,17 +88,17 @@ pub enum SolverError {
 }
 
 pub struct Solver {
-    board: Board<Cell>,
+    pub board: Arc<RwLock<Board<Cell>>>,
     row_solver_info: SolvingInfo,
     column_solver_info: SolvingInfo,
     cache: DistributeNumberCalculator,
-    line_changed: HashSet<Line>,
+    display: Option<Box<dyn SolverDisplay>>,
+    pub line_changed: HashSet<Line>,
 }
 
 impl Default for SolvingInfo {
     fn default() -> Self {
         SolvingInfo {
-            possibility_count: Vec::new(),
             possibilities: Vec::new(),
             given_hint: Vec::new(),
         }
@@ -99,10 +115,17 @@ impl Solver {
             let sum: usize = hint.iter().sum();
             let spaces_needed = sum + hint.len() - 1;
             if spaces_needed > size {
-                return Err(SolverError::InvalidHint(format!(
-                    "{} {} hint sum {} (with spaces) exceeds size {}",
-                    dimension, idx, spaces_needed, size
-                )));
+                return Err(
+                    SolverError::InvalidHint(
+                        format!(
+                            "{} {} hint sum {} (with spaces) exceeds size {}",
+                            dimension,
+                            idx,
+                            spaces_needed,
+                            size
+                        )
+                    )
+                );
             }
         }
 
@@ -113,61 +136,58 @@ impl Solver {
         size: Vec2,
         row_hint: Vec<Vec<usize>>,
         column_hint: Vec<Vec<usize>>,
+        mut display: Box<dyn SolverDisplay>
     ) -> Result<Self, SolverError> {
-        // 보드 크기 검증
+        display.change_state(SolverState::Loading("Validate board size...".to_string()));
+
         if size.row == 0 || size.column == 0 {
-            return Err(SolverError::InvalidSize(format!(
-                "Invalid board size: {}x{}",
-                size.row, size.column
-            )));
+            return Err(
+                SolverError::InvalidSize(
+                    format!("Invalid board size: {}x{}", size.row, size.column)
+                )
+            );
         }
 
-        // 힌트 유효성 검증
+        display.change_state(SolverState::Loading("Validate hints...".to_string()));
+
         Self::validate_hints(size.column, &row_hint, true)?;
         Self::validate_hints(size.row, &column_hint, false)?;
 
         let mut solver = Self {
-            board: Board::new(size, Cell::None),
-            row_solver_info: SolvingInfo::default(), // 임시값
-            column_solver_info: SolvingInfo::default(), // 임시값
+            board: Arc::new(RwLock::new(Board::new(size, Cell::Unknown))),
+            row_solver_info: SolvingInfo::default(),
+            column_solver_info: SolvingInfo::default(),
             cache: DistributeNumberCalculator::new(),
+            display: Some(display),
             line_changed: HashSet::new(),
         };
+
+        if let Some(display) = solver.display.as_mut() {
+            display.change_state(SolverState::Loading("Create initial info...".to_string()));
+        }
 
         solver.row_solver_info = solver.create_solving_info(size.column, row_hint);
         solver.column_solver_info = solver.create_solving_info(size.row, column_hint);
 
-        solver.initialize_line_changed();
+        for r in 0..size.row {
+            solver.line_changed.insert(Line::new(LineDirection::Row, r));
+        }
+        for c in 0..size.column {
+            solver.line_changed.insert(Line::new(LineDirection::Column, c));
+        }
+
+        if let Some(display) = solver.display.as_mut() {
+            display.change_state(SolverState::Idle);
+        }
 
         Ok(solver)
     }
 
-    fn initialize_line_changed(&mut self) {
-        let size = self.board.size();
-
-        for row in 0..size.row {
-            self.line_changed.insert(Line {
-                direction: LineDirection::Row,
-                index: row,
-            });
-        }
-
-        for column in 0..size.column {
-            self.line_changed.insert(Line {
-                direction: LineDirection::Column,
-                index: column,
-            });
-        }
-    }
-
     fn create_solving_info(&mut self, size: usize, hints: Vec<Vec<usize>>) -> SolvingInfo {
-        let mut possibility_count = Vec::with_capacity(size);
         let mut possibilities = Vec::with_capacity(size);
 
         for hint in hints.iter() {
             let count = self.cache.calc_distribute_count_line_hint(hint, size);
-
-            possibility_count.push(count);
 
             let mut possibility = BitSet::with_capacity(count);
             for j in 0..count {
@@ -177,271 +197,365 @@ impl Solver {
         }
 
         SolvingInfo {
-            possibility_count,
             possibilities,
             given_hint: hints,
         }
     }
 
-    fn solve_line<F>(&mut self, line: Line, callback: F) -> Result<(), SolverError>
-    where
-        F: Fn(usize, usize),
-    {
-        let solving_info = match line.direction {
-            LineDirection::Row => &mut self.row_solver_info,
-            LineDirection::Column => &mut self.column_solver_info,
-        };
-
-        let length = match line.direction {
-            LineDirection::Row => self.board.size().column,
-            LineDirection::Column => self.board.size().row,
-        };
-
-        let possibilities = &mut solving_info.possibilities[line.index];
-        let mut remove_possibility = BitSet::with_capacity(possibilities.len());
-        let mut remove_possibility_count = 0;
-        let mut new_line = vec![Cell::None; length];
-
-        let mut count = 0;
-        for possibility_index in possibilities.iter() {
-            count += 1;
-            callback(count, solving_info.possibility_count[line.index]);
-
-            let indexed_line = self
-                .cache
-                .calc_distribute_number_line_hint(
-                    &solving_info.given_hint[line.index],
-                    length,
-                    possibility_index,
-                )
-                .map_err(|e| SolverError::InvalidHint(e.to_string()))?;
-
-            let iter_mut_check: Box<dyn Iterator<Item = &Cell>> = match line.direction {
-                LineDirection::Row => Box::new(self.board.iter_row(line.index)),
-                LineDirection::Column => Box::new(self.board.iter_column(line.index)),
-            };
-
-            if indexed_line
-                .iter()
-                .zip(iter_mut_check)
-                .any(|(cell, indexed_cell)| *cell | *indexed_cell == Cell::Crash)
-            {
-                remove_possibility.insert(possibility_index);
-                remove_possibility_count += 1;
-
-                continue;
-            }
-
-            new_line
-                .iter_mut()
-                .zip(indexed_line.iter())
-                .for_each(|(cell, &indexed_cell)| *cell = *cell | indexed_cell);
-        }
-
-        solving_info.possibility_count[line.index] -= remove_possibility_count;
-        for index in remove_possibility.iter() {
-            possibilities.remove(index);
-        }
-
-        let iter_mut_update: Box<dyn Iterator<Item = &mut Cell>> = match line.direction {
-            LineDirection::Row => Box::new(self.board.iter_row_mut(line.index)),
-            LineDirection::Column => Box::new(self.board.iter_column_mut(line.index)),
-        };
-
-        new_line
-            .iter()
-            .zip(iter_mut_update)
-            .filter(|(new, _old)| **new != Cell::Crash)
-            .for_each(|(new, old)| *old = *old | *new);
-
-        Ok(())
-    }
-
     pub fn to_string(&self) -> String {
-        let mut result = String::new();
+        let board = self.board.read().unwrap();
+        let capacity =
+            board.size().row * board.size().column * 4 +
+            board.size().row * 2 + // newlines
+            1000; // 여유 공간
+        let mut result = String::with_capacity(capacity);
 
-        // 행 힌트의 최대 길이를 구합니다.
-        let max_row_hint_len = self
-            .row_solver_info
-            .given_hint
+        let max_row_hint_len = self.row_solver_info.given_hint
             .iter()
             .map(|hint| hint.len())
             .max()
             .unwrap_or(0);
 
-        // 열 힌트의 최대 길이를 구합니다.
-        let max_col_hint_len = self
-            .column_solver_info
-            .given_hint
+        let max_col_hint_len = self.column_solver_info.given_hint
             .iter()
             .map(|hint| hint.len())
             .max()
             .unwrap_or(0);
 
-        // 열 힌트를 전치하여 보드 위에 출력합니다.
+        // 열 힌트 출력을 최적화
         for i in 0..max_col_hint_len {
-            write!(result, "{:<width$}", " ", width = max_row_hint_len * 4).unwrap(); // 행 힌트 공간
+            result.push_str(&" ".repeat(max_row_hint_len * 4));
             for col_hint in &self.column_solver_info.given_hint {
                 if i < max_col_hint_len - col_hint.len() {
-                    write!(result, "    ").unwrap(); // 빈 공간
+                    result.push_str("    ");
                 } else {
                     let hint_index = i - (max_col_hint_len - col_hint.len());
-                    write!(result, "{:<4}", col_hint[hint_index]).unwrap(); // 고정된 너비 사용
+                    result.push_str(&format!("{:<4}", col_hint[hint_index]));
                 }
             }
-            writeln!(result, "").unwrap();
+            result.push('\n');
         }
 
-        writeln!(result, "").unwrap(); // 빈 줄 추가
+        result.push('\n');
 
-        // 각 행에 대해 행 힌트와 보드 상태를 출력합니다.
+        // 보드 내용 출력을 최적화
         for (row_index, row_hint) in self.row_solver_info.given_hint.iter().enumerate() {
             let hint_str = row_hint
                 .iter()
                 .map(|h| h.to_string())
                 .collect::<Vec<String>>()
                 .join(" ");
-            write!(result, "{:<width$}", hint_str, width = max_row_hint_len * 4).unwrap(); // 힌트를 왼쪽 정렬하여 출력
+            result.push_str(&format!("{:<width$}", hint_str, width = max_row_hint_len * 4));
 
-            // 첫 번째 줄 출력
-            for col_index in 0..self.board.size().column {
-                let cell = self.board.value(Vec2 {
+            // 한 줄의 셀들을 한 번에 처리
+            for col_index in 0..board.size().column {
+                let cell = board.value(Vec2 {
                     row: row_index,
                     column: col_index,
                 });
-                write!(result, "{}{}", cell, cell).unwrap(); // Display 구현 사용
+                result.push_str(&format!("{}{}", cell, cell));
             }
-            writeln!(result, "").unwrap();
+            result.push('\n');
 
-            // 두 번째 줄 출력
-            write!(result, "{:<width$}", "", width = max_row_hint_len * 4).unwrap(); // 두 번째 줄의 행 힌트 공간
-            for col_index in 0..self.board.size().column {
-                let cell = self.board.value(Vec2 {
+            // 두 번째 줄
+            result.push_str(&" ".repeat(max_row_hint_len * 4));
+            for col_index in 0..board.size().column {
+                let cell = board.value(Vec2 {
                     row: row_index,
                     column: col_index,
                 });
-                write!(result, "{}{}", cell, cell).unwrap(); // Display 구현 사용
+                result.push_str(&format!("{}{}", cell, cell));
             }
-            writeln!(result, "").unwrap();
+            result.push('\n');
         }
 
         result
-    }
-
-    pub fn solve_one_step<F>(&mut self, callback: F) -> Result<usize, SolverError>
-    where
-        F: Fn(usize, usize),
-    {
-        if let Some(line) = self.get_next_line() {
-            self.line_changed.remove(&line);
-            let before: Vec<Cell> = match line.direction {
-                LineDirection::Row => self.board.iter_row(line.index).cloned().collect(),
-                LineDirection::Column => self.board.iter_column(line.index).cloned().collect(),
-            };
-
-            if before.iter().all(|cell| *cell != Cell::None) {
-                return Ok(0);
-            }
-
-            self.solve_line(line, callback)?;
-
-            let after: Vec<Cell> = match line.direction {
-                LineDirection::Row => self.board.iter_row(line.index).cloned().collect(),
-                LineDirection::Column => self.board.iter_column(line.index).cloned().collect(),
-            };
-
-            let mut changed: Vec<usize> = Vec::new();
-
-            for i in 0..before.len() {
-                if before[i] != after[i] {
-                    changed.push(i);
-                }
-            }
-
-            let direction = match line.direction {
-                LineDirection::Row => LineDirection::Column,
-                LineDirection::Column => LineDirection::Row,
-            };
-
-            for e in changed.iter() {
-                self.line_changed.insert(Line {
-                    direction,
-                    index: *e,
-                });
-            }
-
-            return Ok(changed.len());
-        }
-
-        Ok(0)
     }
 
     pub fn is_solved(&self) -> bool {
-        self.board.iter_all().all(|cell| *cell != Cell::None)
+        self.board
+            .read()
+            .unwrap()
+            .iter_all()
+            .all(|cell| *cell != Cell::Unknown)
     }
 
-    pub fn to_string_board(&self) -> String {
-        self.board.to_string()
-    }
+    fn solve_line(&mut self, line: Line) -> Result<(), SolverError> {
+        let board = self.board.read().unwrap();
+        let line_cells: Vec<Cell> = match line.direction() {
+            LineDirection::Row => board.iter_row(line.index()).cloned().collect(),
+            LineDirection::Column => board.iter_column(line.index()).cloned().collect(),
+        };
+        drop(board);
 
-    pub fn get_next_line(&mut self) -> Option<Line> {
-        if self.is_solved() {
-            return None;
+        if !line_cells.contains(&Cell::Unknown) {
+            return Ok(());
         }
-        let result = self
-            .line_changed
+
+        let length = line_cells.len();
+        let mut new_line = vec![Cell::Unknown; length];
+        let mut indexed_line = Vec::new();
+
+        let solving_info = match line.direction() {
+            LineDirection::Row => &self.row_solver_info,
+            LineDirection::Column => &self.column_solver_info,
+        };
+
+        let mut remove_possibility = BitSet::with_capacity(
+            solving_info.possibilities[line.index()].len()
+        );
+        let hint = &solving_info.given_hint[line.index()];
+
+        let possibility_count = solving_info.possibilities[line.index()].len();
+        let mut possibility_counted = 0;
+
+        let line_waiting = self.line_order();
+
+        if let Some(display) = self.display.as_mut() {
+            display.change_state(
+                SolverState::Solving(SolvingState {
+                    board: Arc::clone(&self.board),
+                    line,
+                    line_waiting,
+                })
+            );
+        }
+
+        let possibilities: Vec<usize> = solving_info.possibilities[line.index()].iter().collect();
+        for possibility_index in possibilities {
+            possibility_counted += 1;
+            if let Some(display) = self.display.as_mut() {
+                display.update_progress((possibility_counted, possibility_count));
+            }
+
+            self.cache
+                .calc_distribute_number_line_hint(
+                    hint,
+                    length,
+                    possibility_index,
+                    &mut indexed_line
+                )
+                .map_err(|e| SolverError::InvalidHint(e.to_string()))?;
+
+            if
+                indexed_line
+                    .iter()
+                    .zip(line_cells.iter())
+                    .any(|(cell, indexed_cell)| (*cell | *indexed_cell) == Cell::Crash)
+            {
+                remove_possibility.insert(possibility_index);
+                continue;
+            }
+
+            new_line
+                .iter_mut()
+                .zip(indexed_line.iter())
+                .for_each(|(cell, &indexed_cell)| {
+                    *cell = *cell | indexed_cell;
+                });
+        }
+
+        let solving_info = match line.direction() {
+            LineDirection::Row => &mut self.row_solver_info,
+            LineDirection::Column => &mut self.column_solver_info,
+        };
+
+        for index in remove_possibility.iter() {
+            solving_info.possibilities[line.index()].remove(index);
+        }
+
+        let mut board = self.board.write().unwrap();
+        let iter_mut: Box<dyn Iterator<Item = &mut Cell>> = match line.direction() {
+            LineDirection::Row => Box::new(board.iter_row_mut(line.index())),
+            LineDirection::Column => Box::new(board.iter_column_mut(line.index())),
+        };
+
+        iter_mut
+            .zip(new_line.iter())
+            .enumerate()
+            .filter(|(_, (_, &new_cell))| new_cell != Cell::Crash)
+            .filter(|(_, (_, &new_cell))| new_cell != Cell::Unknown)
+            .filter(|(_, (board_cell, &new_cell))| **board_cell != new_cell)
+            .for_each(|(index, (board_cell, &new_cell))| {
+                self.line_changed.insert(
+                    Line::new(
+                        match line.direction() {
+                            LineDirection::Row => LineDirection::Column,
+                            LineDirection::Column => LineDirection::Row,
+                        },
+                        index
+                    )
+                );
+                *board_cell = new_cell;
+            });
+
+        Ok(())
+    }
+
+    pub fn solve(&mut self) -> Result<(), SolverError> {
+        while let Some(line) = self.next_line_pop() {
+            self.solve_line(line)?;
+        }
+
+        if let Some(display) = self.display.as_mut() {
+            display.change_state(SolverState::Idle);
+        }
+        Ok(())
+    }
+
+    fn get_line_sort_key(&self, line: &Line) -> usize {
+        self.get_line_possibility_count(line)
+    }
+
+    fn get_line_possibility_count(&self, line: &Line) -> usize {
+        match line.direction() {
+            LineDirection::Row => self.row_solver_info.possibilities[line.index()].len(),
+            LineDirection::Column => self.column_solver_info.possibilities[line.index()].len(),
+        }
+    }
+
+    fn next_line(&mut self) -> Option<Line> {
+        self.line_changed
             .iter()
-            .min_by_key(|line| match line.direction {
-                LineDirection::Row => self.row_solver_info.possibility_count[line.index],
-                LineDirection::Column => self.column_solver_info.possibility_count[line.index],
-            })
-            .map(|line| *line);
+            .min_by_key(|line| self.get_line_sort_key(line))
+            .cloned()
+    }
 
-        if result.is_none() {
-            self.initialize_line_changed();
-            return self.get_next_line();
-        }
+    fn next_line_pop(&mut self) -> Option<Line> {
+        let line = self.next_line()?;
+        self.line_changed.remove(&line);
+        Some(line)
+    }
 
-        result
+    pub fn line_order(&self) -> Vec<Line> {
+        let mut order = self.line_changed.iter().cloned().collect::<Vec<_>>();
+        order.sort_by_key(|line| self.get_line_sort_key(line));
+        order
+    }
+}
+
+impl Drop for Solver {
+    fn drop(&mut self) {
+        drop(self.display.take());
     }
 }
 
 #[cfg(test)]
 mod test {
+    use crate::console::ConsoleSolverDisplay;
+
     use super::*;
     use Cell::*;
 
     #[test]
     fn test_calc_distribute_number_line_hint_1() {
         let mut calculator = DistributeNumberCalculator::new();
-        let result = calculator.calc_distribute_number_line_hint(&vec![2, 2], 7, 0);
-        assert_eq!(
-            result,
-            Ok(vec![Block, Block, Blank, Block, Block, Blank, Blank])
-        );
+        let mut result = Vec::new();
+        calculator.calc_distribute_number_line_hint(&vec![2, 2], 7, 0, &mut result).unwrap();
+        assert_eq!(result, vec![Block, Block, Blank, Block, Block, Blank, Blank]);
     }
 
     #[test]
     fn test_calc_distribute_number_line_hint_2() {
         let mut calculator = DistributeNumberCalculator::new();
-        let result = calculator.calc_distribute_number_line_hint(&vec![2, 3, 3], 10, 0);
+        let mut result = Vec::new();
+        calculator.calc_distribute_number_line_hint(&vec![2, 3, 3], 10, 0, &mut result).unwrap();
         assert_eq!(
             result,
-            Ok(vec![
-                Block, Block, Blank, Block, Block, Block, Blank, Block, Block, Block
-            ])
+            vec![Block, Block, Blank, Block, Block, Block, Blank, Block, Block, Block]
+        );
+    }
+
+    #[test]
+    fn test_calc_distribute_number_line_hint_3() {
+        let mut calculator = DistributeNumberCalculator::new();
+        let mut result = Vec::new();
+        calculator.calc_distribute_number_line_hint(&vec![2, 3, 4, 1], 30, 0, &mut result).unwrap();
+        assert_eq!(
+            result,
+            vec![
+                Block,
+                Block,
+                Blank,
+                Block,
+                Block,
+                Block,
+                Blank,
+                Block,
+                Block,
+                Block,
+                Block,
+                Blank,
+                Block,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank
+            ]
+        );
+        let index_end = calculator.calc_distribute_count_line_hint(&vec![2, 3, 4, 1], 30) - 1;
+        calculator
+            .calc_distribute_number_line_hint(&vec![2, 3, 4, 1], 30, index_end, &mut result)
+            .unwrap();
+
+        assert_eq!(
+            result,
+            vec![
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Blank,
+                Block,
+                Block,
+                Blank,
+                Block,
+                Block,
+                Block,
+                Blank,
+                Block,
+                Block,
+                Block,
+                Block,
+                Blank,
+                Block
+            ]
         );
     }
 
     #[test]
     fn test_calc_distribute_number_line_hint_high_index() {
         let mut calculator = DistributeNumberCalculator::new();
-        let result = calculator.calc_distribute_number_line_hint(&vec![2, 2], 10, 10);
+        let mut result = Vec::new();
+        calculator.calc_distribute_number_line_hint(&vec![2, 2], 10, 10, &mut result).unwrap();
         assert_eq!(
             result,
-            Ok(vec![
-                Blank, Block, Block, Blank, Blank, Blank, Blank, Blank, Block, Block
-            ])
+            vec![Blank, Block, Block, Blank, Blank, Blank, Blank, Blank, Block, Block]
         );
     }
 
@@ -462,7 +576,7 @@ mod test {
                 vec![3, 3, 2],
                 vec![2, 3, 2],
                 vec![2, 2, 2],
-                vec![2, 2, 2],
+                vec![2, 2, 2]
             ],
             vec![
                 vec![10],
@@ -474,51 +588,31 @@ mod test {
                 vec![2],
                 vec![2],
                 vec![10],
-                vec![10],
+                vec![10]
             ],
-        )
-        .unwrap();
+            Box::new(ConsoleSolverDisplay::new_with_default())
+        ).unwrap();
 
-        solver.solve(0).unwrap();
+        solver.solve().unwrap();
 
         let expected_board = vec![
-            vec![
-                Block, Block, Blank, Blank, Block, Block, Blank, Blank, Block, Block,
-            ],
-            vec![
-                Block, Block, Blank, Block, Block, Block, Blank, Blank, Block, Block,
-            ],
-            vec![
-                Block, Block, Blank, Block, Block, Block, Blank, Block, Block, Block,
-            ],
-            vec![
-                Block, Block, Blank, Blank, Block, Block, Blank, Block, Block, Block,
-            ],
-            vec![
-                Block, Block, Blank, Blank, Block, Block, Blank, Blank, Block, Block,
-            ],
-            vec![
-                Block, Block, Block, Blank, Block, Block, Blank, Blank, Block, Block,
-            ],
-            vec![
-                Block, Block, Block, Blank, Block, Block, Block, Blank, Block, Block,
-            ],
-            vec![
-                Block, Block, Blank, Blank, Block, Block, Block, Blank, Block, Block,
-            ],
-            vec![
-                Block, Block, Blank, Blank, Block, Block, Blank, Blank, Block, Block,
-            ],
-            vec![
-                Block, Block, Blank, Blank, Block, Block, Blank, Blank, Block, Block,
-            ],
+            vec![Block, Block, Blank, Blank, Block, Block, Blank, Blank, Block, Block],
+            vec![Block, Block, Blank, Block, Block, Block, Blank, Blank, Block, Block],
+            vec![Block, Block, Blank, Block, Block, Block, Blank, Block, Block, Block],
+            vec![Block, Block, Blank, Blank, Block, Block, Blank, Block, Block, Block],
+            vec![Block, Block, Blank, Blank, Block, Block, Blank, Blank, Block, Block],
+            vec![Block, Block, Block, Blank, Block, Block, Blank, Blank, Block, Block],
+            vec![Block, Block, Block, Blank, Block, Block, Block, Blank, Block, Block],
+            vec![Block, Block, Blank, Blank, Block, Block, Block, Blank, Block, Block],
+            vec![Block, Block, Blank, Blank, Block, Block, Blank, Blank, Block, Block],
+            vec![Block, Block, Blank, Blank, Block, Block, Blank, Blank, Block, Block]
         ];
 
-        for row in 0..solver.board.size().row {
-            for col in 0..solver.board.size().column {
+        for row in 0..solver.board.read().unwrap().size().row {
+            for col in 0..solver.board.read().unwrap().size().column {
                 println!("{}, {}", row, col);
                 assert_eq!(
-                    solver.board.value(Vec2 { row, column: col }),
+                    solver.board.read().unwrap().value(Vec2 { row, column: col }),
                     &expected_board[row][col]
                 );
             }
