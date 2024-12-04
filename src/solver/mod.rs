@@ -1,8 +1,13 @@
+// src/solver/mod.rs
 pub mod board_formatter;
-pub mod calculator;
 pub mod cell;
+pub mod calculator {
+    pub mod comb_counter;
+}
 pub mod display_handler;
 pub mod line_processor;
+pub mod number_distribution_calculator; // 이름 변경
+pub mod parser;
 pub mod solver_display;
 pub mod solving_strategy;
 

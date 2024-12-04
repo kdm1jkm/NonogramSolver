@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 use super::display_handler::DisplayHandler;
 use super::solver_display::SolverDisplay;
-use super::{calculator::NumberDistributionCalculator, cell::Cell};
+use super::{cell::Cell, number_distribution_calculator::NumberDistributionCalculator};
 use bit_set::BitSet;
 
 pub struct SolvingStrategy {

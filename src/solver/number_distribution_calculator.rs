@@ -1,5 +1,4 @@
-mod comb_counter;
-use super::cell::Cell;
+use super::{calculator::comb_counter, cell::Cell};
 
 pub struct NumberDistributionCalculator {
     pub comb_counter: comb_counter::CombCounter,
