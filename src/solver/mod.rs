@@ -19,6 +19,7 @@ use std::{
     collections::HashSet,
     rc::Rc,
     sync::{Arc, RwLock},
+    time::Instant,
 };
 
 #[derive(Clone, Copy, Hash, Eq, PartialEq)]
@@ -83,6 +84,9 @@ impl Solver {
         let dimension = if is_row { "row" } else { "column" };
 
         for (idx, hint) in hints.iter().enumerate() {
+            if hint.is_empty() {
+                continue;
+            }
             let sum: usize = hint.iter().sum();
             let spaces_needed = sum + hint.len() - 1;
             if spaces_needed > size {
@@ -196,15 +200,16 @@ impl Solver {
             .update_line(line, &new_cells, &mut changed_lines)
             .map_err(|e| SolverError::InvalidHint(e.to_string()))?;
 
-        for changed_index in changed_lines.iter() {
-            self.line_changed.insert(Line::new(
-                match line.direction() {
-                    LineDirection::Row => LineDirection::Column,
-                    LineDirection::Column => LineDirection::Row,
-                },
-                changed_index,
-            ));
-        }
+        let opposite_direction = match line.direction() {
+            LineDirection::Row => LineDirection::Column,
+            LineDirection::Column => LineDirection::Row,
+        };
+
+        self.line_changed.extend(
+            changed_lines
+                .iter()
+                .map(|index| Line::new(opposite_direction, index)),
+        );
 
         Ok(())
     }
@@ -217,9 +222,15 @@ impl Solver {
                 line_waiting: self.line_order(),
             }));
             self.solve_line(line)?;
+            match line.direction() {
+                LineDirection::Row => self.row_strategy.update_possibility_count(line.index()),
+                LineDirection::Column => {
+                    self.column_strategy.update_possibility_count(line.index())
+                }
+            }
         }
 
-        self.change_state(SolverState::Idle);
+        self.change_state(SolverState::Solved);
         Ok(())
     }
 

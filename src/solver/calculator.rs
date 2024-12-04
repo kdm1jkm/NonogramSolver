@@ -68,6 +68,12 @@ impl NumberDistributionCalculator {
         result: &mut Vec<Cell>,
     ) -> Result<(), &'static str> {
         result.clear();
+
+        if hint_numbers.is_empty() {
+            result.append(&mut vec![Cell::Blank; length]);
+            return Ok(());
+        }
+
         let distribute = self.calc_distribute_number(
             length + 1 - hint_numbers.iter().sum::<usize>() - hint_numbers.len(),
             hint_numbers.len() + 1,

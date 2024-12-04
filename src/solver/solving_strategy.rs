@@ -10,6 +10,7 @@ use bit_set::BitSet;
 
 pub struct SolvingStrategy {
     possibilities: Vec<BitSet>,
+    possibility_count: Vec<usize>,
     given_hint: Vec<Vec<usize>>,
     calculator: NumberDistributionCalculator,
     display: Option<Rc<RefCell<Box<dyn SolverDisplay>>>>,
@@ -35,11 +36,14 @@ impl SolvingStrategy {
             possibilities.push(possibility);
         }
 
+        let possibility_count = possibilities.iter().map(|p| p.len()).collect();
+
         Self {
             possibilities,
             given_hint: hints,
             calculator,
             display: Some(Rc::new(RefCell::new(display))),
+            possibility_count,
         }
     }
 
@@ -100,14 +104,16 @@ impl SolvingStrategy {
             }
         }
 
-        for index in remove_possibility.iter() {
-            self.possibilities[line_index].remove(index);
-        }
+        self.possibilities[line_index].difference_with(&remove_possibility);
 
         Ok(new_line)
     }
 
     pub fn get_line_possibility_count(&self, line_index: usize) -> usize {
-        self.possibilities[line_index].len()
+        self.possibility_count[line_index]
+    }
+
+    pub fn update_possibility_count(&mut self, line_index: usize) {
+        self.possibility_count[line_index] = self.possibilities[line_index].len();
     }
 }

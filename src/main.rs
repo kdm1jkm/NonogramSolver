@@ -1,19 +1,40 @@
-use nonogram_solver::console::create_solver_from_file;
+use clap::Parser;
+use nonogram_solver::console::{create_solver_from_file, create_solver_from_html_table};
 
-fn main() {
-    use std::env;
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// 입력 파일 경로
+    input_path: String,
 
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 3 {
-        eprintln!("사용법: {} <파일 이름> <interval_ms>", args[0]);
-        std::process::exit(1);
-    }
-    let input_filename = &args[1];
-    let interval_ms: u64 = args[2].parse().expect("interval_ms는 숫자여야 합니다.");
-    let mut solver = create_solver_from_file(input_filename, interval_ms).unwrap();
+    /// HTML 테이블 형식 사용
+    #[arg(long, default_value_t = false)]
+    html: bool,
 
-    solver.solve().unwrap();
+    /// 업데이트 간격 (밀리초)
+    #[arg(short, long, default_value_t = 0)]
+    interval: u64,
+}
+
+fn main() -> Result<(), String> {
+    let args = Args::parse();
+
+    let mut solver = if args.html {
+        create_solver_from_html_table(
+            &std::fs::read_to_string(&args.input_path)
+                .map_err(|e| format!("Failed to read file: {}", e))?,
+            args.interval,
+        )
+    } else {
+        create_solver_from_file(&args.input_path, args.interval)
+    }?;
+
+    solver
+        .solve()
+        .map_err(|e| format!("Failed to solve: {:?}", e))?;
+
     let result = solver.to_string();
     drop(solver);
-    println!("SOLVED\n{}", result);
+    println!("{}", result);
+    Ok(())
 }

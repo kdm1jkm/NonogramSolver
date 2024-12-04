@@ -35,9 +35,9 @@ impl LineProcessor {
         iter_mut
             .zip(new_cells.iter())
             .enumerate()
-            .filter(|(_, (_, &new_cell))| new_cell != Cell::Crash)
-            .filter(|(_, (_, &new_cell))| new_cell != Cell::Unknown)
-            .filter(|(_, (board_cell, &new_cell))| **board_cell != new_cell)
+            .filter(|(_, (board_cell, &new_cell))| {
+                new_cell != Cell::Crash && new_cell != Cell::Unknown && **board_cell != new_cell
+            })
             .for_each(|(index, (board_cell, &new_cell))| {
                 changed_lines.insert(index);
                 *board_cell = new_cell;
