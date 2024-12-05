@@ -1,6 +1,6 @@
-use regex::Regex;
-use crate::board::vec2::Vec2;
 use super::SolverParser;
+use crate::board::vec2::Vec2;
+use regex::Regex;
 
 pub struct HtmlTableSolverParser<'a> {
     html_table: &'a str,
@@ -14,7 +14,8 @@ impl<'a> HtmlTableSolverParser<'a> {
 
 impl<'a> SolverParser for HtmlTableSolverParser<'a> {
     fn parse(&self) -> Result<(Vec2, Vec<Vec<usize>>, Vec<Vec<usize>>), String> {
-        let column_td_re = Regex::new(r#"<td data-row="-1" data-col="\d+"[^>]*>(.*?)</td>"#).unwrap();
+        let column_td_re =
+            Regex::new(r#"<td data-row="-1" data-col="\d+"[^>]*>(.*?)</td>"#).unwrap();
         let number_re = Regex::new(r"<span>(\d+)</span>").unwrap();
 
         // 열 힌트 추출
@@ -60,4 +61,4 @@ impl<'a> SolverParser for HtmlTableSolverParser<'a> {
             Err("Failed to parse HTML table".to_string())
         }
     }
-} 
+}

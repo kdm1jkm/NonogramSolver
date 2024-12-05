@@ -5,6 +5,12 @@ pub struct CombCounter {
     cache: HashMap<(T, usize), T>,
 }
 
+impl Default for CombCounter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CombCounter {
     pub fn new() -> Self {
         Self {

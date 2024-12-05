@@ -4,6 +4,12 @@ pub struct NumberDistributionCalculator {
     pub comb_counter: comb_counter::CombCounter,
 }
 
+impl Default for NumberDistributionCalculator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl NumberDistributionCalculator {
     pub fn new() -> Self {
         Self {
@@ -42,8 +48,8 @@ impl NumberDistributionCalculator {
             }
         }
 
-        result[count - 2] = index - (counted_index as usize);
-        result[count - 1] = left - (index - (counted_index as usize));
+        result[count - 2] = index - counted_index;
+        result[count - 1] = left - (index - counted_index);
 
         Ok(result)
     }

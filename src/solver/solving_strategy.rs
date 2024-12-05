@@ -18,7 +18,7 @@ pub struct SolvingStrategy {
 
 impl DisplayHandler for SolvingStrategy {
     fn get_display(&self) -> Option<Rc<RefCell<Box<dyn SolverDisplay>>>> {
-        self.display.as_ref().map(|d| Rc::clone(d))
+        self.display.as_ref().map(Rc::clone)
     }
 }
 

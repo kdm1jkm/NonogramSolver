@@ -43,11 +43,9 @@ impl SolverDisplay for ConsoleSolverDisplay {
                 self.is_new_screen = true;
                 print!("{esc}[?1049h {esc}[J {esc}[?25l", esc = 27 as char);
             }
-        } else {
-            if self.is_new_screen {
-                self.is_new_screen = false;
-                print!("{esc}[J {esc}[?1049l {esc}[?25h", esc = 27 as char);
-            }
+        } else if self.is_new_screen {
+            self.is_new_screen = false;
+            print!("{esc}[J {esc}[?1049l {esc}[?25h", esc = 27 as char);
         }
 
         match state {

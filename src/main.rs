@@ -2,16 +2,12 @@ use clap::Parser;
 use nonogram_solver::console::{create_solver_from_file, create_solver_from_html_table};
 
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
 struct Args {
-    /// 입력 파일 경로
     input_path: String,
 
-    /// HTML 테이블 형식 사용
     #[arg(long, default_value_t = false)]
     html: bool,
 
-    /// 업데이트 간격 (밀리초)
     #[arg(short, long, default_value_t = 0)]
     interval: u64,
 }
