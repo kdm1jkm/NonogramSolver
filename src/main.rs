@@ -1,6 +1,6 @@
 use clap::Parser;
 use nonogram_solver::{
-    console::ConsoleSolverDisplay,
+    display::ConsoleDisplay,
     solver::parser::{FileSolverParser, HtmlTableSolverParser, SolverParser},
 };
 
@@ -23,13 +23,11 @@ fn main() -> Result<(), String> {
             &std::fs::read_to_string(&args.input_path)
                 .map_err(|e| format!("Failed to read file: {}", e))?,
         )
-        .create_solver(Box::new(ConsoleSolverDisplay::new(args.interval)))
+        .create_solver(Box::new(ConsoleDisplay::new(args.interval)))
     } else {
         FileSolverParser::new(&args.input_path)
-            .create_solver(Box::new(ConsoleSolverDisplay::new(args.interval)))
+            .create_solver(Box::new(ConsoleDisplay::new(args.interval)))
     }?;
-
-    println!("{}", solver.board);
 
     solver
         .solve()

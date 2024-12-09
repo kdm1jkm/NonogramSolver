@@ -4,7 +4,7 @@ mod html;
 pub use file::FileSolverParser;
 pub use html::HtmlTableSolverParser;
 
-use crate::board::vec2::Vec2;
+use crate::board::Vec2;
 use crate::solver::solver_display::SolverDisplay;
 use crate::solver::Solver;
 pub trait SolverParser {

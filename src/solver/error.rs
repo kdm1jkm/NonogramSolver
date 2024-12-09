@@ -1,18 +1,22 @@
 use std::{error::Error, fmt::Display};
 
-use super::{cell::Cell, utils::Line};
+use super::{cell::Cell, types::Line};
 
 #[derive(Debug)]
 pub enum SolverError {
+    InvalidBoardSize(usize, usize),
     InvalidInitialInfo(InvalidInfoError),
-    SolvingError(SolvingError),
+    InvalidSolvingState(SolvingError),
 }
 
 impl Display for SolverError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            SolverError::InvalidBoardSize(width, height) => {
+                write!(f, "Invalid board size: {}x{}", width, height)
+            }
             SolverError::InvalidInitialInfo(e) => write!(f, "Invalid initial info: {:?}", e),
-            SolverError::SolvingError(e) => write!(f, "Solving error: {:?}", e),
+            SolverError::InvalidSolvingState(e) => write!(f, "Solving error: {:?}", e),
         }
     }
 }

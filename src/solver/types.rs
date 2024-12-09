@@ -1,7 +1,6 @@
 use std::fmt::Debug;
 
 use super::{cell::Cell, Solver};
-use bit_set::BitSet;
 
 #[derive(Clone, Copy, Hash, Eq, PartialEq, Debug)]
 pub enum LineDirection {
@@ -55,10 +54,6 @@ impl Line {
     pub fn index(&self) -> usize {
         (self.packed & !(1 << 31)) as usize
     }
-}
-pub struct LineSolvingInfo<'a> {
-    pub possibilities: &'a mut BitSet,
-    pub given_hint: &'a Vec<usize>,
 }
 
 pub(super) trait LineSolvingInfoProvider {

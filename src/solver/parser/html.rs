@@ -1,5 +1,5 @@
 use super::{SolverParseResult, SolverParser};
-use crate::board::vec2::Vec2;
+use crate::board::Vec2;
 use regex::Regex;
 
 pub struct HtmlTableSolverParser<'a> {
@@ -66,7 +66,7 @@ impl SolverParser for HtmlTableSolverParser<'_> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        console::ConsoleSolverDisplay,
+        display::ConsoleDisplay,
         solver::parser::{HtmlTableSolverParser, SolverParser},
     };
 
@@ -74,7 +74,7 @@ mod tests {
     fn test_create_solver_from_html_table() {
         let html_table = include_str!("../../../sample/table/data2.txt");
         let result = HtmlTableSolverParser::new(html_table)
-            .create_solver(Box::new(ConsoleSolverDisplay::new_with_default()));
+            .create_solver(Box::new(ConsoleDisplay::new_with_default()));
         assert!(
             result.is_ok(),
             "Failed to create solver: {:?}",

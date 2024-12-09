@@ -1,19 +1,18 @@
 use crate::board::Board;
 
-use super::{cell::Cell, utils::Line};
+use super::{cell::Cell, types::Line};
 
 #[derive(Clone)]
-pub enum SolverState<'a> {
+pub enum SolverState {
     Loading(String),
     Idle,
-    Solving(SolvingState<'a>),
+    Solving(SolvingContext),
     Solved,
-    Error(String),
 }
 
 #[derive(Clone)]
-pub struct SolvingState<'a> {
-    pub board: &'a Board<Cell>,
+pub struct SolvingContext {
+    pub board: Board<Cell>,
     pub line: Line,
     pub line_waiting: Vec<Line>,
 }

@@ -3,7 +3,7 @@ use std::io::{self, BufRead};
 use std::path::Path;
 
 use super::{SolverParseResult, SolverParser};
-use crate::board::vec2::Vec2;
+use crate::board::Vec2;
 
 pub struct FileSolverParser<P: AsRef<Path>> {
     file_path: P,

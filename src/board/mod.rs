@@ -1,9 +1,10 @@
-pub mod vec2;
+mod vec2;
 
 use std::fmt::Display;
 
-use vec2::Vec2;
+pub use vec2::Vec2;
 
+#[derive(Clone)]
 pub struct Board<T> {
     values: Vec<T>,
     size: Vec2,

@@ -1,14 +1,14 @@
 use crate::solver::solver_display::{SolverDisplay, SolverState};
-use crate::solver::utils::LineDirection;
+use crate::solver::types::LineDirection;
 use std::thread;
 use std::time::Duration;
 
-pub struct ConsoleSolverDisplay {
+pub struct ConsoleDisplay {
     is_new_screen: bool,
     interval_ms: u64,
 }
 
-impl ConsoleSolverDisplay {
+impl ConsoleDisplay {
     pub fn new(interval_ms: u64) -> Self {
         Self {
             is_new_screen: false,
@@ -21,7 +21,7 @@ impl ConsoleSolverDisplay {
     }
 }
 
-impl SolverDisplay for ConsoleSolverDisplay {
+impl SolverDisplay for ConsoleDisplay {
     fn change_state(&mut self, state: SolverState) {
         if matches!(state, SolverState::Solving(_)) {
             if !self.is_new_screen {
@@ -102,7 +102,6 @@ impl SolverDisplay for ConsoleSolverDisplay {
                 }
             }
             SolverState::Solved => println!("Solved!"),
-            SolverState::Error(message) => println!("Error: {}", message),
         }
     }
 
