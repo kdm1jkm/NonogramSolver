@@ -1,19 +1,17 @@
-use std::collections::HashMap;
-
 type T = usize;
 pub struct CombCounter {
-    cache: HashMap<(T, usize), T>,
+    cache: Vec<Vec<Option<T>>>,
 }
 
 impl CombCounter {
     pub fn new() -> Self {
         Self {
-            cache: HashMap::new(),
+            cache: vec![vec![None; 100]; 100], // Adjust the size as needed
         }
     }
 
     pub fn calc_comb_count(&mut self, amount: T, count: usize) -> T {
-        if let Some(&result) = self.cache.get(&(amount, count)) {
+        if let Some(result) = self.cache.get(amount).and_then(|v| v.get(count)).and_then(|&v| v) {
             return result;
         }
 
@@ -31,7 +29,12 @@ impl CombCounter {
                 .sum(),
         };
 
-        self.cache.insert((amount, count), result);
+        if let Some(row) = self.cache.get_mut(amount) {
+            if let Some(cell) = row.get_mut(count) {
+                *cell = Some(result);
+            }
+        }
+
         result
     }
 }
