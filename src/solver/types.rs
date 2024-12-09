@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 use super::{cell::Cell, Solver};
 
@@ -25,10 +25,23 @@ pub struct Line {
 impl Debug for Line {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Line")
-            .field("packed", &self.packed)
             .field("direction", &self.direction())
             .field("index", &self.index())
             .finish()
+    }
+}
+
+impl Display for Line {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}{} ",
+            self.index() + 1,
+            match self.direction() {
+                LineDirection::Row => "R",
+                LineDirection::Column => "C",
+            }
+        )
     }
 }
 

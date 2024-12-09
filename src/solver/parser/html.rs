@@ -48,6 +48,12 @@ impl SolverParser for HtmlTableSolverParser<'_> {
             }
         }
 
+        println!("row_hints: {:?}", row_hints);
+        println!("column_hints: {:?}", column_hints);
+        // print length of row_hints and column_hints
+        println!("row_hints.len(): {}", row_hints.len());
+        println!("column_hints.len(): {}", column_hints.len());
+
         if !row_hints.is_empty() && !column_hints.is_empty() {
             Ok(SolverParseResult {
                 board_size: Vec2 {
