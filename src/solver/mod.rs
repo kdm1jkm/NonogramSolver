@@ -11,7 +11,6 @@ use crate::board::{Board, Vec2};
 use bit_set::BitSet;
 use calculator::NumberDistributionCalculator;
 use error::{InvalidInfoError, SolverError, SolvingError};
-use rand::{seq::SliceRandom, thread_rng};
 use solver_display::{SolverDisplay, SolverState, SolvingContext};
 use std::collections::HashSet;
 use types::{Line, LineDirection, LineProcessor, LineSolvingInfoProvider};
@@ -123,13 +122,13 @@ impl Solver {
         }
 
         let line_index = self.line_to_index(line);
-        let mut possibilities = self.possibilities[line_index].iter().collect::<Vec<_>>();
+        let possibilities = self.possibilities[line_index].iter().collect::<Vec<_>>();
         let hint = &self.given_hint[line_index];
 
         let mut new_line = vec![Cell::Unknown; line_length];
         let mut indexed_line = Vec::new();
 
-        possibilities.shuffle(&mut thread_rng());
+        // possibilities.shuffle(&mut thread_rng());
 
         let total_possibilities = possibilities.len();
 
