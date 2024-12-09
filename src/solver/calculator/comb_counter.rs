@@ -5,12 +5,6 @@ pub struct CombCounter {
     cache: HashMap<(T, usize), T>,
 }
 
-impl Default for CombCounter {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl CombCounter {
     pub fn new() -> Self {
         Self {
@@ -51,5 +45,12 @@ mod test {
         let mut comb_counter = CombCounter::new();
         let result = comb_counter.calc_comb_count(20, 5);
         assert_eq!(result, 10626);
+    }
+
+    #[test]
+    fn test_calc_comb_count_2() {
+        let mut comb_counter = CombCounter::new();
+        let result = comb_counter.calc_comb_count(10, 1);
+        assert_eq!(result, 1);
     }
 }

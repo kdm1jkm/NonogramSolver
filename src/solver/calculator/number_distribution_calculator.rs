@@ -6,12 +6,6 @@ pub struct NumberDistributionCalculator {
     pub comb_counter: comb_counter::CombCounter,
 }
 
-impl Default for NumberDistributionCalculator {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl NumberDistributionCalculator {
     pub fn new() -> Self {
         Self {

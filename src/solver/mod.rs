@@ -83,8 +83,12 @@ impl Solver {
         let given_hint = row_hint.into_iter().chain(column_hint).collect::<Vec<_>>();
         let possibilities = given_hint
             .iter()
-            .map(|hint| {
-                let count = calculator.calc_distribute_count_line_hint(hint, size.column);
+            .enumerate()
+            .map(|(i, hint)| {
+                let count = calculator.calc_distribute_count_line_hint(
+                    hint,
+                    if i < size.row { size.column } else { size.row },
+                );
                 let mut possibility = BitSet::with_capacity(count);
                 for j in 0..count {
                     possibility.insert(j);
@@ -234,18 +238,10 @@ impl Solver {
         Some(line)
     }
 
-    pub fn line_order(&self) -> Vec<Line> {
+    fn line_order(&self) -> Vec<Line> {
         let mut order = self.line_changed.iter().cloned().collect::<Vec<_>>();
         order.sort_by_key(|line| self.get_line_sort_key(*line));
         order
-    }
-
-    pub fn get_line_possibility_count(&self, line_index: usize) -> usize {
-        self.possibility_count[line_index]
-    }
-
-    pub fn update_possibility_count(&mut self, line_index: usize) {
-        self.possibility_count[line_index] = self.possibilities[line_index].len();
     }
 }
 
