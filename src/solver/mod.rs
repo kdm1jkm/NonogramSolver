@@ -114,23 +114,21 @@ impl Solver {
     }
 
     fn solve_line(&mut self, line: Line) -> Result<(), SolverError> {
-        let line_cells = self.get_line_cells(line);
-        let line_length = line_cells.len();
-
-        if !line_cells.contains(&Cell::Unknown) {
+        let current_line = self.get_line_cells(line);
+        if current_line.iter().all(|&cell| cell != Cell::Unknown) {
             return Ok(());
         }
 
-        let line_index = self.line_to_index(line);
-        let possibilities = self.possibilities[line_index].iter().collect::<Vec<_>>();
-        let hint = &self.given_hint[line_index];
+        let line_length = current_line.len();
+        let mapped_line_index = self.line_to_index(line);
+        let hint = &self.given_hint[mapped_line_index];
+        let possibilities = self.possibilities[mapped_line_index]
+            .iter()
+            .collect::<Vec<_>>();
+        let total_possibilities = possibilities.len();
 
         let mut new_line = vec![Cell::Unknown; line_length];
         let mut indexed_line = Vec::new();
-
-        // possibilities.shuffle(&mut thread_rng());
-
-        let total_possibilities = possibilities.len();
 
         for (i, possibility_index) in possibilities.into_iter().enumerate() {
             self.display.update_progress((i + 1, total_possibilities));
@@ -144,7 +142,7 @@ impl Solver {
                 )
                 .map_err(|e| {
                     SolverError::InvalidSolvingState(SolvingError {
-                        current_line: line_cells.clone(),
+                        current_line: current_line.clone(),
                         calculating_line: indexed_line.clone(),
                         hint: hint.clone(),
                         error_line: line,
@@ -154,10 +152,10 @@ impl Solver {
 
             if indexed_line
                 .iter()
-                .zip(line_cells.iter())
+                .zip(current_line.iter())
                 .any(|(indexed_cell, cell)| (*indexed_cell | *cell) == Cell::Crash)
             {
-                self.possibilities[line_index].remove(possibility_index);
+                self.possibilities[mapped_line_index].remove(possibility_index);
                 continue;
             }
 
@@ -170,7 +168,7 @@ impl Solver {
 
             if new_line
                 .iter()
-                .zip(line_cells.iter())
+                .zip(current_line.iter())
                 .all(|(new_cell, line_cell)| {
                     *line_cell != Cell::Unknown && *new_cell == Cell::Crash
                 })
