@@ -36,7 +36,7 @@ impl NumberDistributionCalculator {
         let mut counted_index = 0;
 
         for (i, r) in self.result_cache.iter_mut().enumerate().take(count - 2) {
-            (0..=left).find(|&j| {
+            for j in 0..=left {
                 let my_use = j;
                 let their_use = left - j;
 
@@ -47,11 +47,9 @@ impl NumberDistributionCalculator {
                     *r = my_use;
                     counted_index -= comb_count;
                     left -= my_use;
-                    true // Stop the iteration
-                } else {
-                    false // Continue the iteration
+                    break;
                 }
-            });
+            }
         }
 
         self.result_cache[count - 2] = index - counted_index;
