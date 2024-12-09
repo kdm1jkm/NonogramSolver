@@ -129,8 +129,6 @@ impl Solver {
         let mut new_line = vec![Cell::Unknown; line_length];
         let mut indexed_line = Vec::new();
 
-        let mut remove_possibility = BitSet::with_capacity(possibilities.len());
-
         possibilities.shuffle(&mut thread_rng());
 
         let total_possibilities = possibilities.len();
@@ -160,7 +158,7 @@ impl Solver {
                 .zip(line_cells.iter())
                 .any(|(indexed_cell, cell)| (*indexed_cell | *cell) == Cell::Crash)
             {
-                remove_possibility.insert(possibility_index);
+                self.possibilities[line_index].remove(possibility_index);
                 continue;
             }
 
@@ -181,8 +179,6 @@ impl Solver {
                 break;
             }
         }
-
-        self.possibilities[line_index].difference_with(&remove_possibility);
 
         self.update_line(line, &new_line);
 
