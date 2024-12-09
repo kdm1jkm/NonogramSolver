@@ -1,7 +1,9 @@
+use std::fmt::Debug;
+
 use super::{cell::Cell, Solver};
 use bit_set::BitSet;
 
-#[derive(Clone, Copy, Hash, Eq, PartialEq)]
+#[derive(Clone, Copy, Hash, Eq, PartialEq, Debug)]
 pub enum LineDirection {
     Row,
     Column,
@@ -19,6 +21,16 @@ impl LineDirection {
 #[derive(Clone, Copy, Hash, Eq, PartialEq)]
 pub struct Line {
     pub packed: u32,
+}
+
+impl Debug for Line {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Line")
+            .field("packed", &self.packed)
+            .field("direction", &self.direction())
+            .field("index", &self.index())
+            .finish()
+    }
 }
 
 impl Line {
@@ -44,13 +56,6 @@ impl Line {
         (self.packed & !(1 << 31)) as usize
     }
 }
-
-#[derive(Debug)]
-pub enum SolverError {
-    InvalidSize(String),
-    InvalidHint(String),
-}
-
 pub struct LineSolvingInfo<'a> {
     pub possibilities: &'a mut BitSet,
     pub given_hint: &'a Vec<usize>,
@@ -73,7 +78,7 @@ impl LineSolvingInfoProvider for Solver {
 
 pub(super) trait LineProcessor {
     fn get_line_cells(&self, line: Line) -> Vec<Cell>;
-    fn update_line(&mut self, line: Line, new_cells: &[Cell]) -> Result<(), &'static str>;
+    fn update_line(&mut self, line: Line, new_cells: &[Cell]);
 }
 
 impl LineProcessor for Solver {
@@ -84,7 +89,7 @@ impl LineProcessor for Solver {
         }
     }
 
-    fn update_line(&mut self, line: Line, new_cells: &[Cell]) -> Result<(), &'static str> {
+    fn update_line(&mut self, line: Line, new_cells: &[Cell]) {
         let iter_mut: Box<dyn Iterator<Item = &mut Cell>> = match line.direction() {
             LineDirection::Row => Box::new(self.board.iter_row_mut(line.index())),
             LineDirection::Column => Box::new(self.board.iter_column_mut(line.index())),
@@ -101,7 +106,5 @@ impl LineProcessor for Solver {
                     .insert(Line::new(line.direction().opposite(), index));
                 *board_cell = new_cell;
             });
-
-        Ok(())
     }
 }

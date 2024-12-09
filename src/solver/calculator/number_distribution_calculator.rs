@@ -23,11 +23,15 @@ impl NumberDistributionCalculator {
         amount: usize,
         count: usize,
         index: usize,
-    ) -> Result<Vec<usize>, &'static str> {
+    ) -> Result<Vec<usize>, String> {
         let mut result = vec![0; count];
 
         if self.comb_counter.calc_comb_count(amount, count) <= index {
-            return Err("Index out of range");
+            return Err(format!(
+                "Index out of range: {} is larger than {}",
+                index,
+                self.comb_counter.calc_comb_count(amount, count)
+            ));
         }
         let mut left = amount;
 
@@ -73,12 +77,11 @@ impl NumberDistributionCalculator {
         length: usize,
         index: usize,
         result: &mut Vec<Cell>,
-    ) -> Result<(), &'static str> {
+    ) -> Result<(), String> {
         result.clear();
 
         if hint_numbers.is_empty() {
             result.append(&mut vec![Cell::Blank; length]);
-            return Ok(());
         }
 
         let distribute = self.calc_distribute_number(
@@ -95,7 +98,6 @@ impl NumberDistributionCalculator {
             }
         }
         result.append(&mut vec![Cell::Blank; distribute[distribute.len() - 1]]);
-
         Ok(())
     }
 }
@@ -108,7 +110,7 @@ mod test {
         amount: usize,
         count: usize,
         index: usize,
-    ) -> Result<Vec<usize>, &'static str> {
+    ) -> Result<Vec<usize>, String> {
         let mut distribute_number = NumberDistributionCalculator::new();
         distribute_number.calc_distribute_number(amount, count, index)
     }
@@ -182,6 +184,6 @@ mod test {
     #[test]
     fn test_index_out_of_range() {
         let result = calc_distribute_number_temp(5, 3, 50);
-        assert_eq!(result, Err("Index out of range"));
+        assert!(result.is_err());
     }
 }

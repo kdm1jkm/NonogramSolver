@@ -1,5 +1,6 @@
 pub mod calculator;
 pub mod cell;
+pub mod error;
 pub mod parser;
 pub mod solver_display;
 pub mod utils;
@@ -8,10 +9,11 @@ use crate::board::{vec2::Vec2, Board};
 use bit_set::BitSet;
 use calculator::number_distribution_calculator::NumberDistributionCalculator;
 use cell::Cell;
+use error::{InvalidInfoError, SolverError, SolvingError};
 use rand::{seq::SliceRandom, thread_rng};
 use solver_display::{SolverDisplay, SolverState, SolvingState};
 use std::collections::HashSet;
-use utils::{LineProcessor, LineSolvingInfoProvider};
+use utils::{Line, LineDirection, LineProcessor, LineSolvingInfoProvider};
 
 pub struct Solver {
     // Fixed
@@ -24,7 +26,7 @@ pub struct Solver {
 
     // Cache
     possibility_count: Vec<usize>,
-    line_changed: HashSet<utils::Line>,
+    line_changed: HashSet<Line>,
     calculator: NumberDistributionCalculator,
 }
 
@@ -32,10 +34,8 @@ impl Solver {
     fn validate_hints(
         size: usize,
         hints: &[Vec<usize>],
-        is_row: bool,
-    ) -> Result<(), utils::SolverError> {
-        let dimension = if is_row { "row" } else { "column" };
-
+        direction: LineDirection,
+    ) -> Result<(), SolverError> {
         for (idx, hint) in hints.iter().enumerate() {
             if hint.is_empty() {
                 continue;
@@ -43,10 +43,12 @@ impl Solver {
             let sum: usize = hint.iter().sum();
             let spaces_needed = sum + hint.len() - 1;
             if spaces_needed > size {
-                return Err(utils::SolverError::InvalidHint(format!(
-                    "{} {} hint sum {} (with spaces) exceeds size {}",
-                    dimension, idx, spaces_needed, size
-                )));
+                return Err(SolverError::InvalidInitialInfo(InvalidInfoError {
+                    error_line: Line::new(direction, idx),
+                    size,
+                    message: "Invalid hint: required space for hint is larger than the board size"
+                        .to_string(),
+                }));
             }
         }
 
@@ -58,20 +60,21 @@ impl Solver {
         row_hint: Vec<Vec<usize>>,
         column_hint: Vec<Vec<usize>>,
         mut display: Box<dyn SolverDisplay>,
-    ) -> Result<Self, utils::SolverError> {
+    ) -> Result<Self, SolverError> {
         display.change_state(SolverState::Loading("Validate board size...".to_string()));
 
         if size.row == 0 || size.column == 0 {
-            return Err(utils::SolverError::InvalidSize(format!(
-                "Invalid board size: {}x{}",
-                size.row, size.column
-            )));
+            return Err(SolverError::InvalidInitialInfo(InvalidInfoError {
+                error_line: Line::new(LineDirection::Row, 0),
+                size: 0,
+                message: "Invalid board size: size must be greater than 0".to_string(),
+            }));
         }
 
         display.change_state(SolverState::Loading("Validate hints...".to_string()));
 
-        Self::validate_hints(size.column, &row_hint, true)?;
-        Self::validate_hints(size.row, &column_hint, false)?;
+        Self::validate_hints(size.column, &row_hint, LineDirection::Row)?;
+        Self::validate_hints(size.row, &column_hint, LineDirection::Column)?;
 
         let board = Board::new(size, Cell::Unknown);
 
@@ -113,12 +116,12 @@ impl Solver {
         for r in 0..size.row {
             solver
                 .line_changed
-                .insert(utils::Line::new(utils::LineDirection::Row, r));
+                .insert(Line::new(utils::LineDirection::Row, r));
         }
         for c in 0..size.column {
             solver
                 .line_changed
-                .insert(utils::Line::new(utils::LineDirection::Column, c));
+                .insert(Line::new(utils::LineDirection::Column, c));
         }
 
         solver.display.change_state(SolverState::Idle);
@@ -130,7 +133,7 @@ impl Solver {
         self.board.iter_all().all(|cell| *cell != Cell::Unknown)
     }
 
-    fn solve_line(&mut self, line: utils::Line) -> Result<(), utils::SolverError> {
+    fn solve_line(&mut self, line: Line) -> Result<(), SolverError> {
         let line_cells = self.get_line_cells(line);
         let line_length = line_cells.len();
 
@@ -161,7 +164,15 @@ impl Solver {
                     possibility_index,
                     &mut indexed_line,
                 )
-                .map_err(|e| utils::SolverError::InvalidHint(e.to_string()))?;
+                .map_err(|e| {
+                    SolverError::SolvingError(SolvingError {
+                        current_line: line_cells.clone(),
+                        calculating_line: indexed_line.clone(),
+                        hint: hint.clone(),
+                        error_line: line,
+                        message: e,
+                    })
+                })?;
 
             if indexed_line
                 .iter()
@@ -190,13 +201,12 @@ impl Solver {
             }
         }
 
-        self.update_line(line, &new_line)
-            .map_err(|e| utils::SolverError::InvalidHint(e.to_string()))?;
+        self.update_line(line, &new_line);
 
         Ok(())
     }
 
-    pub fn solve(&mut self) -> Result<(), utils::SolverError> {
+    pub fn solve(&mut self) -> Result<(), SolverError> {
         while let Some(line) = self.next_line_pop() {
             self.display
                 .change_state(SolverState::Solving(SolvingState {
@@ -211,24 +221,24 @@ impl Solver {
         Ok(())
     }
 
-    fn get_line_sort_key(&self, line: utils::Line) -> usize {
+    fn get_line_sort_key(&self, line: Line) -> usize {
         self.possibility_count[self.line_to_index(line)]
     }
 
-    fn next_line(&self) -> Option<utils::Line> {
+    fn next_line(&self) -> Option<Line> {
         self.line_changed
             .iter()
             .min_by_key(|line| self.get_line_sort_key(**line))
             .cloned()
     }
 
-    fn next_line_pop(&mut self) -> Option<utils::Line> {
+    fn next_line_pop(&mut self) -> Option<Line> {
         let line = self.next_line()?;
         self.line_changed.remove(&line);
         Some(line)
     }
 
-    pub fn line_order(&self) -> Vec<utils::Line> {
+    pub fn line_order(&self) -> Vec<Line> {
         let mut order = self.line_changed.iter().cloned().collect::<Vec<_>>();
         order.sort_by_key(|line| self.get_line_sort_key(*line));
         order
@@ -251,7 +261,9 @@ mod test {
 
     #[test]
     fn test_solve() {
-        let mut solver: Solver = FileSolverParser::new("./sample/data1.txt").create_solver(Box::new(ConsoleSolverDisplay::new_with_default())).unwrap();
+        let mut solver: Solver = FileSolverParser::new("./sample/data1.txt")
+            .create_solver(Box::new(ConsoleSolverDisplay::new_with_default()))
+            .unwrap();
 
         solver.solve().unwrap();
 

@@ -6,7 +6,7 @@ pub use html::HtmlTableSolverParser;
 
 use crate::board::vec2::Vec2;
 use crate::solver::solver_display::SolverDisplay;
-use crate::solver::{Solver, utils::SolverError};
+use crate::solver::Solver;
 pub trait SolverParser {
     fn parse(&self) -> Result<SolverParseResult, String>;
 
@@ -17,15 +17,7 @@ pub trait SolverParser {
         let row_hints = result.row_hints;
         let column_hints = result.column_hints;
 
-        Solver::new(size, row_hints, column_hints, display).map_err(|e| {
-            format!(
-                "Failed to create Solver: {}",
-                match e {
-                    SolverError::InvalidSize(s) => format!("Invalid size: {}", s),
-                    SolverError::InvalidHint(s) => format!("Invalid hint: {}", s),
-                }
-            )
-        })
+        Ok(Solver::new(size, row_hints, column_hints, display)?)
     }
 }
 
