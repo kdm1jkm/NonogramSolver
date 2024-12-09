@@ -37,7 +37,7 @@ impl SolverDisplay for SimpleConsoleDisplay {
     }
 
     fn update_progress(&mut self, progress: (usize, usize)) {
-        if progress.0 % 9991 != 0 && progress.0 != progress.1 {
+        if progress.0 % 1991 != 0 && progress.0 != progress.1 {
             return;
         }
         let progress_length = 40;
