@@ -110,7 +110,7 @@ impl SolverDisplay for ConsoleDisplay {
             return;
         }
 
-        if progress.0 % 321 != 0 && progress.0 != progress.1 {
+        if progress.0 % 9991 != 0 && progress.0 != progress.1 {
             return;
         }
 

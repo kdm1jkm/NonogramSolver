@@ -37,9 +37,19 @@ impl SolverDisplay for SimpleConsoleDisplay {
     }
 
     fn update_progress(&mut self, progress: (usize, usize)) {
-        if progress.0 % 991 != 0 && progress.0 != progress.1 {
+        if progress.0 % 9991 != 0 && progress.0 != progress.1 {
             return;
         }
-        print!("Progress: {}/{}\r", progress.0, progress.1);
+        let progress_length = 40;
+        let progress_count =
+            (((progress.0 as f64) / (progress.1 as f64)) * (progress_length as f64)) as usize;
+
+        print!(
+            "[{}{}] {}/{}\r",
+            "#".repeat(progress_count),
+            " ".repeat(progress_length - progress_count),
+            progress.0,
+            progress.1
+        );
     }
 }

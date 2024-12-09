@@ -130,6 +130,12 @@ impl Solver {
         let mut new_line = vec![Cell::Unknown; line_length];
         let mut indexed_line = Vec::new();
 
+        if hint.is_empty() {
+            let new_line = vec![Cell::Blank; line_length];
+            self.update_line(line, &new_line);
+            return Ok(());
+        }
+
         for (i, possibility_index) in possibilities.into_iter().enumerate() {
             self.display.update_progress((i + 1, total_possibilities));
 
