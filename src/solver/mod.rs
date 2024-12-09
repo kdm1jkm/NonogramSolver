@@ -231,14 +231,14 @@ impl Solver {
 mod test {
     use super::*;
     use crate::{
-        display::ConsoleDisplay,
+        display::SimpleConsoleDisplay,
         solver::parser::{FileSolverParser, SolverParser},
     };
 
     #[test]
     fn test_solve() {
         let mut solver: Solver = FileSolverParser::new("./sample/data1.txt")
-            .create_solver(Box::new(ConsoleDisplay::new_with_default()))
+            .create_solver(Box::new(SimpleConsoleDisplay::new_with_default()))
             .unwrap();
 
         solver.solve().unwrap();

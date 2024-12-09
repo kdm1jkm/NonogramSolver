@@ -78,23 +78,25 @@ impl NumberDistributionCalculator {
         index: usize,
         result: &mut Vec<Cell>,
     ) -> Result<(), String> {
-        result.clear();
-
         let distribute = self.calc_distribute_number(
             length + 1 - hint_numbers.iter().sum::<usize>() - hint_numbers.len(),
             hint_numbers.len() + 1,
             index,
         )?;
+        Self::create_line(distribute, hint_numbers, result);
+        Ok(())
+    }
 
-        for i in 0..hint_numbers.len() {
-            result.extend(std::iter::repeat(Cell::Blank).take(distribute[i]));
-            result.extend(std::iter::repeat(Cell::Block).take(hint_numbers[i]));
-            if i < hint_numbers.len() - 1 {
+    fn create_line(blanks: &[usize], blocks: &[usize], result: &mut Vec<Cell>) {
+        result.clear();
+        for i in 0..blocks.len() {
+            result.extend(std::iter::repeat(Cell::Blank).take(blanks[i]));
+            result.extend(std::iter::repeat(Cell::Block).take(blocks[i]));
+            if i < blanks.len() - 1 {
                 result.push(Cell::Blank);
             }
         }
-        result.extend(std::iter::repeat(Cell::Blank).take(distribute[distribute.len() - 1]));
-        Ok(())
+        result.extend(std::iter::repeat(Cell::Blank).take(blanks[blanks.len() - 1]));
     }
 }
 
