@@ -49,3 +49,81 @@ fn main() -> Result<(), String> {
     println!("{}", result);
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error;
+
+    use super::*;
+
+    fn solve_normal(filename: &str) -> Result<(), Box<dyn Error>> {
+        let display = SimpleConsoleDisplay::new(0);
+        let mut solver = FileSolverParser::new(filename).create_solver(Box::new(display))?;
+        solver.solve()?;
+        if !solver.is_solved() {
+            return Err("Failed to solve".into());
+        }
+        Ok(())
+    }
+
+    fn solve_table(filename: &str) -> Result<(), Box<dyn Error>> {
+        let display = SimpleConsoleDisplay::new(0);
+        let content = std::fs::read_to_string(filename)?;
+        let mut solver = HtmlTableSolverParser::new(&content).create_solver(Box::new(display))?;
+        solver.solve()?;
+        if !solver.is_solved() {
+            return Err("Failed to solve".into());
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_solve_normal_1() {
+        assert!(solve_normal("./sample/data1.txt").is_ok());
+    }
+
+    #[test]
+    fn test_solve_normal_2() {
+        assert!(solve_normal("./sample/data2.txt").is_ok());
+    }
+
+    #[test]
+    fn test_solve_normal_3() {
+        assert!(solve_normal("./sample/data3.txt").is_ok());
+    }
+
+    #[test]
+    fn test_solve_normal_4() {
+        assert!(solve_normal("./sample/data4.txt").is_ok());
+    }
+
+    #[test]
+    fn test_solve_normal_5() {
+        assert!(solve_normal("./sample/data5.txt").is_ok());
+    }
+
+    #[test]
+    fn test_solve_table_1() {
+        assert!(solve_table("./sample/table/data1.txt").is_ok());
+    }
+
+    #[test]
+    fn test_solve_table_2() {
+        assert!(solve_table("./sample/table/data2.txt").is_ok());
+    }
+
+    #[test]
+    fn test_solve_table_3() {
+        assert!(solve_table("./sample/table/data3.txt").is_ok());
+    }
+
+    #[test]
+    fn test_solve_table_4() {
+        assert!(solve_table("./sample/table/data4.txt").is_ok());
+    }
+
+    #[test]
+    fn test_solve_table_5() {
+        assert!(solve_table("./sample/table/data5.txt").is_ok());
+    }
+}
