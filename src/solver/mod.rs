@@ -80,11 +80,7 @@ impl Solver {
 
         let mut calculator = NumberDistributionCalculator::new();
 
-        let given_hint = row_hint
-            .into_iter()
-            .chain(column_hint.into_iter())
-            .collect::<Vec<_>>();
-
+        let given_hint = row_hint.into_iter().chain(column_hint).collect::<Vec<_>>();
         let possibilities = given_hint
             .iter()
             .map(|hint| {

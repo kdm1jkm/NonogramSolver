@@ -12,7 +12,7 @@ impl<'a> HtmlTableSolverParser<'a> {
     }
 }
 
-impl<'a> SolverParser for HtmlTableSolverParser<'a> {
+impl SolverParser for HtmlTableSolverParser<'_> {
     fn parse(&self) -> Result<SolverParseResult, String> {
         let column_td_re =
             Regex::new(r#"<td data-row="-1" data-col="\d+"[^>]*>(.*?)</td>"#).unwrap();

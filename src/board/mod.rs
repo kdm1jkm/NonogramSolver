@@ -60,22 +60,18 @@ impl<T> Board<T> {
     pub fn iter_all(&self) -> impl Iterator<Item = &T> {
         self.values.iter()
     }
+}
 
-    pub fn to_string(&self) -> String
-    where
-        T: Display,
-    {
-        let capacity = self.size.row * (self.size.column * 4 + 1);
-        let mut result = String::with_capacity(capacity);
+impl<T: Display> Display for Board<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for row in 0..self.size.row {
             for col in 0..self.size.column {
-                use std::fmt::Write;
                 let value = self.value(Vec2 { row, column: col });
-                write!(result, "{}", value).expect("writing to string should never fail");
+                write!(f, "{}", value)?;
             }
-            result.push('\n');
+            writeln!(f)?;
         }
-        result
+        Ok(())
     }
 }
 

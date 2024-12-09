@@ -29,7 +29,7 @@ fn main() -> Result<(), String> {
             .create_solver(Box::new(ConsoleSolverDisplay::new(args.interval)))
     }?;
 
-    println!("{}", solver.board.to_string());
+    println!("{}", solver.board);
 
     solver
         .solve()

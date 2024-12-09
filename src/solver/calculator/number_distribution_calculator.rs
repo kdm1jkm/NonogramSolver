@@ -37,7 +37,7 @@ impl NumberDistributionCalculator {
 
         let mut counted_index = 0;
 
-        for i in 0..count - 2 {
+        for (i, r) in result.iter_mut().enumerate().take(count - 2) {
             for j in 0..=left {
                 let my_use = j;
                 let their_use = left - j;
@@ -46,9 +46,9 @@ impl NumberDistributionCalculator {
                 counted_index += comb_count;
 
                 if counted_index > index {
-                    result[i] = my_use;
-                    left -= my_use;
+                    *r = my_use;
                     counted_index -= comb_count;
+                    left -= my_use;
                     break;
                 }
             }
