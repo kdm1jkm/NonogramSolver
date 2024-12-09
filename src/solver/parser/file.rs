@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
-use super::SolverParser;
+use super::{SolverParseResult, SolverParser};
 use crate::board::vec2::Vec2;
 
 pub struct FileSolverParser<P: AsRef<Path>> {
@@ -16,7 +16,7 @@ impl<P: AsRef<Path>> FileSolverParser<P> {
 }
 
 impl<P: AsRef<Path>> SolverParser for FileSolverParser<P> {
-    fn parse(&self) -> Result<(Vec2, Vec<Vec<usize>>, Vec<Vec<usize>>), String> {
+    fn parse(&self) -> Result<SolverParseResult, String> {
         let file = File::open(&self.file_path).map_err(|_| "Failed to open file.".to_string())?;
         let mut lines = io::BufReader::new(file).lines();
 
@@ -74,13 +74,13 @@ impl<P: AsRef<Path>> SolverParser for FileSolverParser<P> {
             column_hints.push(hints);
         }
 
-        Ok((
-            Vec2 {
+        Ok(SolverParseResult {
+            board_size: Vec2 {
                 row: row_count,
                 column: column_count,
             },
             row_hints,
             column_hints,
-        ))
+        })
     }
 }

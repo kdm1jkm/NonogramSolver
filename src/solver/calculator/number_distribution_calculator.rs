@@ -1,4 +1,6 @@
-use super::{calculator::comb_counter, cell::Cell};
+use crate::solver::cell::Cell;
+
+use super::comb_counter;
 
 pub struct NumberDistributionCalculator {
     pub comb_counter: comb_counter::CombCounter,

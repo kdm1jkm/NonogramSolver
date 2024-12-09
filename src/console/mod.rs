@@ -1,22 +1,7 @@
-use crate::solver::parser::{create_solver, FileSolverParser, HtmlTableSolverParser};
 use crate::solver::solver_display::{SolverDisplay, SolverState};
-use crate::solver::{LineDirection, Solver};
-use std::path::Path;
+use crate::solver::utils::LineDirection;
 use std::thread;
 use std::time::Duration;
-
-pub fn create_solver_from_file<P: AsRef<Path>>(
-    file_path: P,
-    interval_ms: u64,
-) -> Result<Solver, String> {
-    let parser = FileSolverParser::new(file_path);
-    create_solver(parser, Box::new(ConsoleSolverDisplay::new(interval_ms)))
-}
-
-pub fn create_solver_from_html_table(html_table: &str, interval_ms: u64) -> Result<Solver, String> {
-    let parser = HtmlTableSolverParser::new(html_table);
-    create_solver(parser, Box::new(ConsoleSolverDisplay::new(interval_ms)))
-}
 
 pub struct ConsoleSolverDisplay {
     is_new_screen: bool,
@@ -54,7 +39,7 @@ impl SolverDisplay for ConsoleSolverDisplay {
             SolverState::Solving(solving_state) => {
                 print!("{esc}[H", esc = 27 as char);
 
-                let board = solving_state.board.read().unwrap();
+                let board = solving_state.board;
 
                 let board_string = board.to_string();
                 let board_lines: Vec<&str> = board_string.lines().collect();
@@ -142,24 +127,5 @@ impl SolverDisplay for ConsoleSolverDisplay {
             progress.0,
             progress.1
         );
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_create_solver_from_html_table() {
-        let html_table = include_str!("../../sample/table/data1.txt");
-        let result = create_solver_from_html_table(html_table, 0);
-        assert!(
-            result.is_ok(),
-            "Failed to create solver: {:?}",
-            result.err()
-        );
-
-        let result = result.unwrap().solve();
-        assert!(result.is_ok(), "Failed to solve: {:?}", result.err());
     }
 }

@@ -1,20 +1,19 @@
 use crate::board::Board;
-use std::sync::{Arc, RwLock};
 
-use super::{cell::Cell, Line};
+use super::{cell::Cell, utils::Line};
 
 #[derive(Clone)]
-pub enum SolverState {
+pub enum SolverState<'a> {
     Loading(String),
     Idle,
-    Solving(SolvingState),
+    Solving(SolvingState<'a>),
     Solved,
     Error(String),
 }
 
 #[derive(Clone)]
-pub struct SolvingState {
-    pub board: Arc<RwLock<Board<Cell>>>,
+pub struct SolvingState<'a> {
+    pub board: &'a Board<Cell>,
     pub line: Line,
     pub line_waiting: Vec<Line>,
 }

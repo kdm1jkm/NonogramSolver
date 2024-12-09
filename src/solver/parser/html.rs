@@ -1,4 +1,4 @@
-use super::SolverParser;
+use super::{SolverParseResult, SolverParser};
 use crate::board::vec2::Vec2;
 use regex::Regex;
 
@@ -13,7 +13,7 @@ impl<'a> HtmlTableSolverParser<'a> {
 }
 
 impl<'a> SolverParser for HtmlTableSolverParser<'a> {
-    fn parse(&self) -> Result<(Vec2, Vec<Vec<usize>>, Vec<Vec<usize>>), String> {
+    fn parse(&self) -> Result<SolverParseResult, String> {
         let column_td_re =
             Regex::new(r#"<td data-row="-1" data-col="\d+"[^>]*>(.*?)</td>"#).unwrap();
         let number_re = Regex::new(r"<span>(\d+)</span>").unwrap();
@@ -49,16 +49,39 @@ impl<'a> SolverParser for HtmlTableSolverParser<'a> {
         }
 
         if !row_hints.is_empty() && !column_hints.is_empty() {
-            Ok((
-                Vec2 {
+            Ok(SolverParseResult {
+                board_size: Vec2 {
                     row: row_hints.len(),
                     column: column_hints.len(),
                 },
                 row_hints,
                 column_hints,
-            ))
+            })
         } else {
             Err("Failed to parse HTML table".to_string())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        console::ConsoleSolverDisplay,
+        solver::parser::{HtmlTableSolverParser, SolverParser},
+    };
+
+    #[test]
+    fn test_create_solver_from_html_table() {
+        let html_table = include_str!("../../../sample/table/data2.txt");
+        let result = HtmlTableSolverParser::new(html_table)
+            .create_solver(Box::new(ConsoleSolverDisplay::new_with_default()));
+        assert!(
+            result.is_ok(),
+            "Failed to create solver: {:?}",
+            result.err()
+        );
+
+        let result = result.unwrap().solve();
+        assert!(result.is_ok(), "Failed to solve: {:?}", result.err());
     }
 }

@@ -1,5 +1,8 @@
 use clap::Parser;
-use nonogram_solver::console::{create_solver_from_file, create_solver_from_html_table};
+use nonogram_solver::{
+    console::ConsoleSolverDisplay,
+    solver::parser::{FileSolverParser, HtmlTableSolverParser, SolverParser},
+};
 
 #[derive(Parser)]
 struct Args {
@@ -16,20 +19,23 @@ fn main() -> Result<(), String> {
     let args = Args::parse();
 
     let mut solver = if args.html {
-        create_solver_from_html_table(
+        HtmlTableSolverParser::new(
             &std::fs::read_to_string(&args.input_path)
                 .map_err(|e| format!("Failed to read file: {}", e))?,
-            args.interval,
         )
+        .create_solver(Box::new(ConsoleSolverDisplay::new(args.interval)))
     } else {
-        create_solver_from_file(&args.input_path, args.interval)
+        FileSolverParser::new(&args.input_path)
+            .create_solver(Box::new(ConsoleSolverDisplay::new(args.interval)))
     }?;
+
+    println!("{}", solver.board.to_string());
 
     solver
         .solve()
         .map_err(|e| format!("Failed to solve: {:?}", e))?;
 
-    let result = solver.to_string();
+    let result = solver.board.to_string();
     drop(solver);
     println!("{}", result);
     Ok(())

@@ -11,6 +11,3 @@ clap = { version = "4.4", features = ["derive"] }
 crossterm = "0.28.1"
 rand = "0.8.5"
 regex = "1.11.1"
-
-[toolchain]
-channel = "nightly"
