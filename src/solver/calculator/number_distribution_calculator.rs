@@ -4,21 +4,25 @@ use super::comb_counter;
 
 pub struct NumberDistributionCalculator {
     pub comb_counter: comb_counter::CombCounter,
+    result_cache: Vec<usize>,
 }
 
 impl NumberDistributionCalculator {
     pub fn new() -> Self {
         Self {
             comb_counter: comb_counter::CombCounter::new(),
+            result_cache: Vec::new(),
         }
     }
+
     pub fn calc_distribute_number(
         &mut self,
         amount: usize,
         count: usize,
         index: usize,
-    ) -> Result<Vec<usize>, String> {
-        let mut result = vec![0; count];
+    ) -> Result<&[usize], String> {
+        self.result_cache.clear();
+        self.result_cache.resize(count, 0);
 
         if self.comb_counter.calc_comb_count(amount, count) <= index {
             return Err(format!(
@@ -31,8 +35,8 @@ impl NumberDistributionCalculator {
 
         let mut counted_index = 0;
 
-        for (i, r) in result.iter_mut().enumerate().take(count - 2) {
-            for j in 0..=left {
+        for (i, r) in self.result_cache.iter_mut().enumerate().take(count - 2) {
+            (0..=left).find(|&j| {
                 let my_use = j;
                 let their_use = left - j;
 
@@ -43,15 +47,17 @@ impl NumberDistributionCalculator {
                     *r = my_use;
                     counted_index -= comb_count;
                     left -= my_use;
-                    break;
+                    true // Stop the iteration
+                } else {
+                    false // Continue the iteration
                 }
-            }
+            });
         }
 
-        result[count - 2] = index - counted_index;
-        result[count - 1] = left - (index - counted_index);
+        self.result_cache[count - 2] = index - counted_index;
+        self.result_cache[count - 1] = left - (index - counted_index);
 
-        Ok(result)
+        Ok(&self.result_cache)
     }
 
     pub fn calc_distribute_count_line_hint(
@@ -73,8 +79,6 @@ impl NumberDistributionCalculator {
         result: &mut Vec<Cell>,
     ) -> Result<(), String> {
         result.clear();
-
-        // result.extend(std::iter::repeat(Cell::Blank).take(length));
 
         let distribute = self.calc_distribute_number(
             length + 1 - hint_numbers.iter().sum::<usize>() - hint_numbers.len(),
@@ -104,7 +108,8 @@ mod test {
         index: usize,
     ) -> Result<Vec<usize>, String> {
         let mut distribute_number = NumberDistributionCalculator::new();
-        distribute_number.calc_distribute_number(amount, count, index)
+        distribute_number.calc_distribute_number(amount, count, index)?;
+        Ok(distribute_number.result_cache.clone())
     }
 
     #[test]
